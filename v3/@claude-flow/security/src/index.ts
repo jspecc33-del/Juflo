@@ -10,6 +10,7 @@
  * Also provides:
  * - Input validation with Zod schemas
  * - Secure token generation
+ * - Unix passwd format parsing and security auditing
  *
  * @module v3/security
  */
@@ -108,6 +109,16 @@ export {
   type SignedToken,
   type VerificationCode,
 } from './token-generator.js';
+
+// Unix Passwd Format Parser
+export {
+  UnixPasswdParser,
+  UnixPasswdParserError,
+  type PasswdEntry,
+  type PasswdParseError,
+  type PasswdParseResult,
+  type PasswdSecurityReport,
+} from './unix-passwd-parser.js';
 
 // ============================================================================
 // Convenience Factory Functions
