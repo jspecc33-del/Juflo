@@ -12,7 +12,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   UnixPasswdParser,
-  UnixPasswdParserError,
   type PasswdEntry,
 } from '../src/unix-passwd-parser.js';
 
@@ -90,8 +89,22 @@ describe('UnixPasswdParser', () => {
       expect(errors[0].message).toMatch(/UID/);
     });
 
+    it('records an error when UID is negative', () => {
+      const content = 'bad:x:-1:0:bad:/home/bad:/bin/bash';
+      const { entries, errors } = UnixPasswdParser.parse(content);
+      expect(entries).toHaveLength(0);
+      expect(errors[0].message).toMatch(/UID/);
+    });
+
     it('records an error when GID is non-numeric', () => {
       const content = 'root:x:0:abc:root:/root:/bin/bash';
+      const { entries, errors } = UnixPasswdParser.parse(content);
+      expect(entries).toHaveLength(0);
+      expect(errors[0].message).toMatch(/GID/);
+    });
+
+    it('records an error when GID is negative', () => {
+      const content = 'bad:x:0:-1:bad:/home/bad:/bin/bash';
       const { entries, errors } = UnixPasswdParser.parse(content);
       expect(entries).toHaveLength(0);
       expect(errors[0].message).toMatch(/GID/);
@@ -245,18 +258,26 @@ describe('UnixPasswdParser', () => {
       expect(report.duplicateUsernames['alice']).toHaveLength(2);
     });
 
-    it('detects unprotected password fields (empty or "0")', () => {
+    it('detects unprotected password field (empty string only)', () => {
       const content = [
         'alice:x:1000:1000:Alice:/home/alice:/bin/bash',
         'backdoor::1001:1001:No password:/home/backdoor:/bin/bash',
-        'legacy:0:1002:1002:Legacy:/home/legacy:/bin/bash',
       ].join('\n');
       const { entries } = UnixPasswdParser.parse(content);
       const report = UnixPasswdParser.audit(entries);
-      expect(report.unprotectedPasswords.map((e) => e.username)).toEqual(
-        expect.arrayContaining(['backdoor', 'legacy']),
-      );
+      expect(report.unprotectedPasswords.map((e) => e.username)).toContain('backdoor');
       expect(report.unprotectedPasswords.map((e) => e.username)).not.toContain('alice');
+    });
+
+    it('does not flag standard locked-account placeholders as unprotected', () => {
+      const content = [
+        'locked1:*:1000:1000:Locked:/home/l1:/bin/bash',
+        'locked2:!:1001:1001:Locked:/home/l2:/bin/bash',
+        'shadow:x:1002:1002:Shadow:/home/s:/bin/bash',
+      ].join('\n');
+      const { entries } = UnixPasswdParser.parse(content);
+      const report = UnixPasswdParser.audit(entries);
+      expect(report.unprotectedPasswords).toHaveLength(0);
     });
 
     it('lists regular interactive users (uid >= 1000 with login shell)', () => {

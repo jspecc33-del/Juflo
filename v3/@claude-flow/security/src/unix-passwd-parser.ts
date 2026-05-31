@@ -49,8 +49,9 @@ export interface PasswdSecurityReport {
   /** Usernames that appear more than once. */
   duplicateUsernames: Record<string, PasswdEntry[]>;
   /**
-   * Accounts whose password field is empty or '0', indicating no shadow
+   * Accounts whose password field is empty string, indicating no shadow
    * protection — the account may be accessible without a password.
+   * Standard locked-account placeholders ('x', '*', '!', '!!') are not flagged.
    */
   unprotectedPasswords: PasswdEntry[];
   /** Regular accounts (uid >= 1000) that have an interactive login shell. */
@@ -127,13 +128,13 @@ export class UnixPasswdParser {
       }
 
       const uid = parseInt(uidStr, 10);
-      if (isNaN(uid) || String(uid) !== uidStr) {
+      if (isNaN(uid) || uid < 0 || String(uid) !== uidStr) {
         errors.push({ lineNumber, line, message: `Invalid UID: '${uidStr}'` });
         continue;
       }
 
       const gid = parseInt(gidStr, 10);
-      if (isNaN(gid) || String(gid) !== gidStr) {
+      if (isNaN(gid) || gid < 0 || String(gid) !== gidStr) {
         errors.push({ lineNumber, line, message: `Invalid GID: '${gidStr}'` });
         continue;
       }
@@ -229,7 +230,9 @@ export class UnixPasswdParser {
         regularAccounts.push(entry);
       }
 
-      if (entry.password === '' || entry.password === '0') {
+      // An empty password field means no password protection at all.
+      // Standard locked/shadow placeholders ('x', '*', '!', '!!') are not flagged.
+      if (entry.password === '') {
         unprotectedPasswords.push(entry);
       }
 
