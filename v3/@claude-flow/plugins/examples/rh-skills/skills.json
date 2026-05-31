@@ -1,0 +1,42 @@
+[
+  {
+    "id": "skill-1",
+    "name": "Security Audit Runner",
+    "desc": "Run lynis audit and generate a summary report",
+    "command": "sudo lynis audit system --quick 2>&1 | tee /tmp/lynis-report.txt && echo 'Report saved to /tmp/lynis-report.txt'",
+    "category": "security",
+    "params": [],
+    "tags": ["audit", "lynis", "hardening"],
+    "author": "RH Security",
+    "created": "2025-01-15"
+  },
+  {
+    "id": "skill-2",
+    "name": "Docker Cleanup",
+    "desc": "Remove all unused Docker containers, images, and volumes",
+    "command": "docker system prune -af --volumes && docker volume prune -f",
+    "category": "containers",
+    "params": [],
+    "tags": ["docker", "cleanup", "maintenance"],
+    "author": "DevOps Team",
+    "created": "2025-02-01"
+  },
+  {
+    "id": "skill-3",
+    "name": "SSL Cert Check",
+    "desc": "Check SSL certificate expiry for a domain",
+    "command": "echo | openssl s_client -servername {{domain}} -connect {{domain}}:443 2>/dev/null | openssl x509 -noout -dates",
+    "category": "security",
+    "params": [
+      {
+        "name": "domain",
+        "desc": "Domain to check",
+        "required": true,
+        "defaultValue": "example.com"
+      }
+    ],
+    "tags": ["ssl", "openssl", "certificates"],
+    "author": "RH Security",
+    "created": "2025-02-10"
+  }
+]
