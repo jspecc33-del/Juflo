@@ -32,8 +32,8 @@ export async function handler(args: Record<string, unknown>, config: SandboxConf
   const timeout = params.timeout_ms ?? config.defaultTimeoutMs;
   const env = buildSandboxEnv(config);
 
-  let cmd: string;
-  let cmdArgs: string[];
+  let cmd!: string;
+  let cmdArgs!: string[];
   let tempFile: string | null = null;
 
   switch (params.language) {
