@@ -56,7 +56,7 @@ export const RE_TOOLS: RETool[] = [
     domains: ['malware', 'automotive', 'iot', 'network'],
     cfg: [
       { key: 'Decompiler (Hex-Rays)', value: 'View > Open Subviews > Pseudocode (F5)', note: 'Requires separate Hex-Rays decompiler license per architecture' },
-      { key: 'FLIRT Signatures', value: 'File > Load File > FLIRT Signature File', notes: 'Apply .sig files to auto-name statically-linked library functions' } as unknown as import('./types.js').ConfigEntry,
+      { key: 'FLIRT Signatures', value: 'File > Load File > FLIRT Signature File', note: 'Apply .sig files to auto-name statically-linked library functions' },
       { key: 'Type Libraries', value: 'View > Type Libraries (Shift+F11)', note: 'Load .til files for Windows API, POSIX, custom structs' },
       { key: 'IDA Python', value: 'Built-in Python 3; pip install via idapyswitch', note: 'Full scripting API; community scripts at github.com/EiNSTeiN-' },
       { key: 'Remote Debugging', value: 'Debugger > Select Debugger > Remote GDB / Win32 Remote', note: 'Deploy ida_server / win32_server on target; connect over SSH tunnel' },

@@ -144,7 +144,7 @@ export function search(input: {
     snippet: string,
     score: number
   ) => {
-    if (snippet.toLowerCase().includes(q)) {
+    if (snippet != null && snippet.toLowerCase().includes(q)) {
       results.push({ toolId: tool.id, toolName: tool.name, tab: tabId, field, snippet, score });
     }
   };
