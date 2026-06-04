@@ -622,10 +622,191 @@ pr:[
 ['—','Frame boundary heuristics','Idle gap > 5ms = frame separator. Fixed-length: pattern at constant offset. Variable-length: length field at byte 1–3 of each burst.'],
 ['—','text2pcap format','Hex dump with byte offsets, 16 bytes/line. -l 1 (Ethernet) or -l 147 (USER0). Output: valid pcap for Wireshark.'],
 ]},
+r2:{name:'Radare2 / Cutter',sub:'Open-source RE framework',color:'#22D3EE',domains:['malware','iot','firmware'],
+cfg:[
+['Config file','~/.radare2rc','Persistent settings; e.color=true, e.asm.syntax=intel'],
+['Arch / bits','r2 -a arm -b 32 firmware.bin','Override auto-detection; also e asm.arch and e asm.bits at runtime'],
+['Analysis level','aaa (full) / aa (fast) / aaaa (paranoid)','Start with aa; use afl to list found functions then refine'],
+['Write mode','r2 -w binary (or oo+ at prompt)','Required for patching; use wox for hex overwrites'],
+['Scripting','r2pipe (Python/Node/Go) or #!python shebang','pip install r2pipe; r2.cmdj() returns parsed JSON'],
+['Cutter GUI','cutter binary — Qt-based GUI wrapping r2','Decompiler via rz-ghidra plugin; rzpkg install rz-ghidra'],
+['ESIL emulation','aei; aeim; aepc 0x1000; aes (step)','Intermediate language emulator; useful for obfuscated shellcode'],
+['Projects','Ps project.r2 / Po project.r2','Saves flags, comments, analysis; portable across sessions'],
+],
+hk:[
+[['?'],'Help for current command group','Shell'],
+[['s 0x401000'],'Seek to address','Shell'],
+[['pd 20'],'Print disassembly (20 instructions)','Shell'],
+[['pdf'],'Disassemble current function','Shell'],
+[['afn newname'],'Rename current function','Shell'],
+[['axt @ addr'],'Cross-references to address','Shell'],
+[['iz'],'List strings in data section','Shell'],
+[['iE'],'List exports','Shell'],
+[['db 0x401000'],'Set breakpoint (debug mode)','Debug'],
+[['dc'],'Continue execution','Debug'],
+[['V'],'Visual mode (hex + disasm panels)','Shell'],
+[['VV'],'Graph view of current function','Shell'],
+],
+ho:[
+['to','Ghidra','r2 -qc "r2ghidra; echo" bin → decompiled C. Or export JSON and import into Ghidra via script.','r2ghidra output'],
+['to','x64dbg','Export flags: aflj | python3 r2_to_x64dbg.py > labels.json → Debug > Import Labels.','JSON label file'],
+['from','Binwalk','binwalk -e firmware.bin → extracted files → r2 each binary for per-component analysis.','extracted component binaries'],
+['to','Frida','r2 identifies function offsets → Frida hooks at base+offset for runtime validation.','function offsets'],
+],
+pr:[
+['.r2','Radare2 script','Plain text r2 commands; run with r2 -i script.r2 binary'],
+['.rdb','Radare2 project','Saved session with flags, comments, analysis; Ps/Po commands'],
+['ESIL','ESIL bytecode','Evaluable Strings Intermediate Language; stack-based, used for emulation'],
+['.json','r2 JSON output','All major commands support -j flag; pipe to jq for filtering'],
+]},
+frida:{name:'Frida',sub:'Dynamic instrumentation',color:'#A78BFA',domains:['malware','mobile','iot'],
+cfg:[
+['Install','pip install frida-tools frida','Also install frida-server on target device (match versions exactly)'],
+['Android setup','adb push frida-server /data/local/tmp/\nadb shell chmod 755 .../frida-server\nadb shell .../frida-server &','Root required; use Magisk Frida module for persistent install'],
+['iOS setup','Install via Cydia (jailbroken) or Frida gadget injection for unjailbroken','Gadget: inject frida-gadget.dylib; frida-ios-dump for IPA extraction'],
+['Process attach','frida -U -n "com.example.app" (USB)\nfrida -H 192.168.1.1 -n app (remote)','-f to spawn fresh; -p PID to attach by PID'],
+['Script reload','frida -l script.js --no-pause','Use --runtime=v8 for full ES2020 support'],
+['Stalker (tracing)','Stalker.follow(threadId, {events:{call:true}, onReceive:cb})','High-overhead; instrument short paths only; use transform for instruction-level'],
+['SSL pinning bypass','frida -U -l ssl-pinning-bypass.js -f com.example.app','frida-codeshare.com/pcipolloni/universal-android-ssl-pinning-bypass-with-frida'],
+['Objection','objection -g com.example.app explore','Frida wrapper: memory search, class/method listing, root bypass, FS browsing'],
+],
+hk:[
+[['Interceptor.attach'],'Hook function entry/exit','JS API'],
+[['Interceptor.replace'],'Replace function entirely','JS API'],
+[['Memory.readByteArray'],'Read raw bytes from address','JS API'],
+[['Memory.writeByteArray'],'Patch bytes at address','JS API'],
+[['Java.use'],'Get Java class reference (Android)','Java API'],
+[['Java.perform'],'Run code on main Java thread','Java API'],
+[['ObjC.classes'],'List all Objective-C classes (iOS)','ObjC API'],
+[['Process.enumerateModules'],'List loaded modules / libraries','JS API'],
+[['Module.findExportByName'],'Resolve exported symbol address','JS API'],
+[['frida-ps -U'],'List USB-connected device processes','CLI'],
+[['frida-trace -U -i "recv*"'],'Auto-trace matching exports','CLI'],
+],
+ho:[
+['to','Ghidra','Frida logs runtime addresses → Ghidra_offset = runtime_addr - Module.getBaseAddress("lib.so").','runtime → static address mapping'],
+['to','Wireshark','Hook SSL_write/SSL_read → log plaintext; forward to SSLKEYLOGFILE for Wireshark TLS decryption.','plaintext session keys / decrypted buffer'],
+['from','JADX','JADX identifies Java class/method names → Frida Java.use("com.example.Class").method.implementation = function() {}','class and method names from JADX'],
+['to','Radare2','r2 static analysis provides function offsets → Frida hooks at Module.getBaseAddress() + offset.','function offset from r2 analysis'],
+],
+pr:[
+['.js','Frida script','ES2020 JS; run with frida -l script.js; use rpc.exports for two-way comms'],
+['frida-codeshare','Community scripts','frida.re/docs/codeshare — SSL bypass, root detection bypass, anti-debug bypass'],
+['RPC','Frida RPC','rpc.exports = { fn: () => {} } in script; call from Python via script.exports.fn()'],
+['Gadget','Frida Gadget','Inject into IPA/APK without root; configure via frida-gadget-config.json'],
+]},
+jadx:{name:'JADX',sub:'Android / APK decompiler',color:'#34D399',domains:['mobile','malware'],
+cfg:[
+['Input formats','jadx app.apk / app.dex / app.jar / app.aab','Also accepts .zip containing DEX files; AAB needs extra args for splits'],
+['GUI launch','jadx-gui app.apk','Search (Ctrl+F / Ctrl+Shift+F), navigation, deobfuscation toggle in menu'],
+['Deobfuscation','jadx --deobf app.apk\nor Preferences > Deobfuscation in GUI','Renames a/b/c to class_1/method_2; significantly improves readability'],
+['Output dir','jadx -d out/ app.apk','Generates out/sources/ (Java) and out/resources/ (XML, assets, raw)'],
+['Threads','jadx --threads-count 8 app.apk','Parallelise decompilation; default is CPU count'],
+['Export Gradle','jadx --export-gradle app.apk','Generates build.gradle so output compiles in Android Studio'],
+['Show bad code','jadx --show-bad-code app.apk','Includes fallback bytecode for methods JADX could not decompile'],
+['Plugins','~/.jadx/plugins/ — drop plugin JARs','frida-export, ida-export, custom transformers available'],
+],
+hk:[
+[['Ctrl','F'],'Find in current file','GUI'],
+[['Ctrl','Shift','F'],'Search across all classes','GUI'],
+[['Ctrl','G'],'Go to line','GUI'],
+[['Alt','←'],'Navigate back','GUI'],
+[['Ctrl','Click'],'Go to declaration','GUI'],
+[['X / Right-click'],'Find usages of symbol','GUI'],
+[['F5'],'Reload / re-decompile','GUI'],
+[['Ctrl','S'],'Save all decompiled sources','GUI'],
+[['Ctrl','E'],'Jump to recent files','GUI'],
+],
+ho:[
+['to','Frida','JADX reveals class/method hierarchy → Frida: Java.use("com.pkg.Class").method.implementation = function(arg) {}','fully-qualified class + method names'],
+['to','Ghidra','Shared .so inside APK → extract from jadx output/resources/lib/arm64-v8a/ → drag into Ghidra for native analysis.','extracted native .so files'],
+['to','Wireshark','Identify OkHttp/Retrofit endpoints in JADX → confirm traffic in Wireshark with IP/domain display filter.','endpoint URLs and API patterns'],
+['from','apktool','apktool d app.apk → smali source; JADX gives readable Java. Use smali for patching, JADX for logic.','smali + Java cross-reference'],
+],
+pr:[
+['.apk','Android Package','ZIP: classes.dex, resources.arsc, AndroidManifest.xml, native libs in lib/'],
+['.aab','Android App Bundle','Google Play format; use bundletool to extract base APK before JADX analysis'],
+['.dex','Dalvik Executable','Compiled bytecode for Dalvik/ART VM; multiple dex possible (multidex)'],
+['smali','Smali bytecode','Human-readable DEX assembly; apktool for patching, JADX for reading'],
+['AndroidManifest.xml','App manifest','Permissions, activities, services, receivers; critical for attack surface mapping'],
+]},
+binwalk:{name:'Binwalk',sub:'Firmware extraction & analysis',color:'#FB923C',domains:['firmware','iot'],
+cfg:[
+['Install','pip install binwalk\napt install binwalk (Kali)','Also installs jefferson, ubi_reader, sasquatch for full filesystem support'],
+['Extraction','binwalk -e firmware.bin','Outputs to _firmware.bin.extracted/; use -M for recursive extraction of nested archives'],
+['Signature scan','binwalk firmware.bin','Identifies: kernel, rootfs, bootloader, certs, compression headers, filesystems'],
+['Entropy analysis','binwalk -E firmware.bin','High entropy (>0.9) = compressed/encrypted; flat entropy = raw code or padding'],
+['SquashFS / JFFS2','unsquashfs filesystem.squashfs\njefferson jffs2.img','binwalk -e handles both automatically; mount -t squashfs for live inspection'],
+['Custom signatures','~/.config/binwalk/magic — add custom magic bytes','Format: offset bytes description; reuse libmagic syntax'],
+['Carve specific type','binwalk --dd "jpeg image:jpg" firmware.bin','Carve only matching files; useful for extracting certs, keys, images'],
+['Diff two firmware','bindiff fw_v1.bin fw_v2.bin','Shows added/removed/changed bytes; pair with r2 for changed function analysis'],
+],
+hk:[
+[['-e'],'Extract files from firmware','CLI'],
+[['-M'],'Recursive extraction (matryoshka mode)','CLI'],
+[['-E'],'Entropy plot (identify encryption/compression)','CLI'],
+[['-A'],'Scan for CPU opcodes (architecture detection)','CLI'],
+[['-C'],'Scan for certificate / key files','CLI'],
+[['-l N'],'Limit output to first N results','CLI'],
+[['-o N'],'Skip first N bytes before scanning','CLI'],
+[['--log out.csv'],'Write results to CSV log file','CLI'],
+],
+ho:[
+['to','Ghidra','binwalk -e firmware.bin → locate kernel/app binary in extracted dir → drag into Ghidra with correct arch/endianness.','extracted ELF / raw binary'],
+['to','Radare2','binwalk -e fw.bin → r2 -a mips -e cfg.bigendian=true _fw.bin.extracted/squashfs-root/usr/bin/app','extracted binary with known arch'],
+['to','Wireshark','Extract /etc/ssl/certs/ or embedded private keys → load in Wireshark TLS decryption to decrypt device traffic.','embedded TLS private key / certs'],
+['from','Serial Port Monitor','UART console reveals boot log → identifies filesystem type (JFFS2, SquashFS, UBI) → confirms extraction target.','boot log with FS hints'],
+],
+pr:[
+['SquashFS','SquashFS','Read-only compressed rootfs; magic 0x73717368; mount with loopback or unsquashfs'],
+['JFFS2','JFFS2 / UBIFS','Flash-friendly journaling FS; jefferson for JFFS2; ubireader for UBI/UBIFS volumes'],
+['LZMA / gzip','Compressed kernel','uImage header (0x27051956) + compression; binwalk auto-detects and extracts'],
+['UBI','UBI volume image','NAND flash; ubireader_extract_images for volume extraction'],
+['TRX','TRX / CFE header','Broadcom router firmware container; magic 0x30524448; contains kernel + rootfs partitions'],
+]},
+gdb:{name:'GDB + pwndbg',sub:'Linux / embedded debugger',color:'#F43F5E',domains:['malware','iot','firmware'],
+cfg:[
+['pwndbg install','git clone https://github.com/pwndbg/pwndbg\ncd pwndbg && ./setup.sh','Replaces peda/gef; adds heap inspection, ROP gadgets, context display'],
+['GDB init file','~/.gdbinit — source /path/to/pwndbg/gdbinit.py','Also set: set disassembly-flavor intel, set follow-fork-mode child'],
+['Remote stub','gdbserver :1234 ./target\ngdb> target remote host:1234','For embedded: OpenOCD (JTAG), QEMU -s -S, or kernel stub via /proc/kcore'],
+['QEMU user-mode','qemu-arm-static -g 1234 ./arm_binary\ngdb-multiarch> target remote :1234','Cross-arch debugging on x86 host; install gdb-multiarch + qemu-user-static'],
+['Attach to process','gdb -p PID\nor gdb> attach PID','Set /proc/sys/kernel/yama/ptrace_scope = 0 if blocked'],
+['Core dumps','ulimit -c unlimited; ./target\ngdb ./target core','Post-mortem crash analysis; coredumpctl for systemd-captured dumps'],
+['Python scripting','gdb.execute() / gdb.parse_and_eval()','Full Python 3 API inside GDB; write custom commands with gdb.Command subclass'],
+['TUI mode','gdb -tui or Ctrl+X A','Split source/disasm/registers panes; layout src/asm/regs/split commands'],
+],
+hk:[
+[['b *0x401000'],'Set breakpoint at address','GDB'],
+[['r [args]'],'Run / restart target','GDB'],
+[['c'],'Continue execution','GDB'],
+[['ni'],'Step over (next instruction)','GDB'],
+[['si'],'Step into (single instruction)','GDB'],
+[['fin'],'Run until function return','GDB'],
+[['x/20wx $sp'],'Examine stack (20 words, hex)','GDB'],
+[['info registers'],'Show all registers','GDB'],
+[['disas func'],'Disassemble function','GDB'],
+[['bt'],'Backtrace (call stack)','GDB'],
+[['watch *addr'],'Hardware watchpoint on memory address','GDB'],
+[['set {int}0xaddr=0x90'],'Patch byte at address (NOP)','GDB'],
+[['ctx'],'pwndbg: full context (regs, stack, disasm)','pwndbg'],
+[['heap'],'pwndbg: inspect heap chunks','pwndbg'],
+],
+ho:[
+['to','Ghidra','GDB runtime addresses → Ghidra static: python3 -c "print(hex(gdb_addr - base + ghidra_base))"','runtime → static address mapping'],
+['from','Radare2','r2 analysis identifies function offsets → GDB: b *base+offset; or use r2 debug backend: r2 -d gdb://host:1234.','function offsets from r2'],
+['from','Binwalk','Firmware extracted and QEMU-emulated → GDB remote stub via QEMU -s -S; cross-debug without physical hardware.','QEMU-emulated firmware process'],
+['to','Frida','GDB for native Linux/kernel; Frida for Android/iOS userspace API hooking without process restart.','complementary coverage boundary'],
+],
+pr:[
+['.gdb','GDB script','Sequence of GDB commands; run with gdb -x script.gdb ./binary or source inside session'],
+['core','Core dump','ELF snapshot of crashed process memory + registers; load with gdb ./binary core'],
+['GDB/MI','GDB Machine Interface','Structured output protocol used by IDEs (VS Code, CLion); gdb --interpreter=mi'],
+['RSP','GDB Remote Serial Protocol','Text protocol over TCP/serial; implemented by gdbserver, OpenOCD, QEMU, J-Link'],
+]},
 };
 
-const TOOL_ORDER = ['ghidra','ida','dnspy','x64dbg','ws','can','spm'];
-const DOMAIN_COLORS = {all:'#888',malware:'#8B5CF6',automotive:'#CA8A04',iot:'#3B82F6',network:'#F97316'};
+const TOOL_ORDER = ['ghidra','ida','dnspy','x64dbg','ws','can','spm','r2','frida','jadx','binwalk','gdb'];
+const DOMAIN_COLORS = {all:'#888',malware:'#8B5CF6',automotive:'#CA8A04',iot:'#3B82F6',network:'#F97316',mobile:'#34D399',firmware:'#FB923C'};
 let curDomain='all', curTool='ghidra', curTab='cfg';
 
 /* ══════════════════════════════════════════════════════════════════
@@ -749,7 +930,7 @@ function setTab(t) {
 ══════════════════════════════════════════════════════════════════ */
 function renderDpills() {
   const el = document.getElementById('dpills');
-  const domains = [['all','All'],['malware','Malware'],['automotive','Automotive'],['iot','Embedded/IoT'],['network','Network RE']];
+  const domains = [['all','All'],['malware','Malware'],['automotive','Automotive'],['iot','Embedded/IoT'],['network','Network RE'],['mobile','Mobile'],['firmware','Firmware']];
   el.innerHTML = domains.map(([d, label]) => {
     const on = d === curDomain;
     const c = DOMAIN_COLORS[d];
@@ -860,7 +1041,7 @@ async function init() {
   } else {
     log('warn', 'Running in browser (not Electron) — save-log uses browser download fallback');
   }
-  log('info', `Loaded ${TOOL_ORDER.length} tools across 4 domains`);
+  log('info', `Loaded ${TOOL_ORDER.length} tools across 6 domains`);
   renderDpills(); renderSidebar(); renderContent();
   log('ok', 'App ready');
 }

@@ -1,5 +1,5 @@
-export type ToolId = 'ghidra' | 'ida' | 'dnspy' | 'x64dbg' | 'ws' | 'can' | 'spm';
-export type Domain = 'malware' | 'automotive' | 'iot' | 'network';
+export type ToolId = 'ghidra' | 'ida' | 'dnspy' | 'x64dbg' | 'ws' | 'can' | 'spm' | 'r2' | 'frida' | 'jadx' | 'binwalk' | 'gdb';
+export type Domain = 'malware' | 'automotive' | 'iot' | 'network' | 'mobile' | 'firmware';
 export type TabId = 'cfg' | 'hk' | 'ho' | 'pr';
 
 export interface ConfigEntry {
