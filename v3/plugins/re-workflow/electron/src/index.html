@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RE Workflow Reference</title>
+<style>
+/* ── Reset & base ────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0C0D0F; --s1:#13151A; --s2:#1A1D24; --s3:#21242D;
+  --b1:#252830; --b2:#323640;
+  --tx:#E8EAF0; --ts:#8890A4; --tm:#4A5168;
+  --amber:#EAB308; --green:#10B981; --purple:#8B5CF6;
+  --blue:#3B82F6; --coral:#F97316; --teal:#14B8A6;
+  --ind:#6366F1; --pink:#EC4899;
+  --r:6px;
+  --mono: 'Cascadia Code','JetBrains Mono','Fira Code','Consolas',monospace;
+  --sans: 'Segoe UI','Inter','DM Sans',system-ui,sans-serif;
+  --head: 'Segoe UI','Syne','DM Sans',system-ui,sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:14px;line-height:1.6;overflow:hidden}
+body{display:flex;flex-direction:column}
+
+/* ── Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--ts)}
+
+/* ── App header ──────────────────────────────────────────────────── */
+.app-header{
+  display:flex;align-items:center;gap:14px;
+  padding:0 18px;height:48px;background:var(--s1);
+  border-bottom:1px solid var(--b1);flex-shrink:0;user-select:none;
+  -webkit-app-region:drag;
+}
+.app-header *{-webkit-app-region:no-drag}
+.logo{font-family:var(--head);font-size:15px;font-weight:700;letter-spacing:.04em;color:var(--tx)}
+.logo span{color:var(--amber)}
+.domain-pills{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}
+.dpill{
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;
+  border:1px solid var(--b2);color:var(--ts);cursor:pointer;
+  background:transparent;font-family:var(--sans);transition:all .13s
+}
+.dpill:hover{color:var(--tx);border-color:var(--ts)}
+.dpill.on{color:#0a0a0a;border-color:transparent}
+.log-toggle-btn{
+  margin-left:10px;padding:3px 11px;border-radius:20px;font-size:11px;
+  font-weight:500;border:1px solid var(--b2);color:var(--ts);
+  cursor:pointer;background:transparent;font-family:var(--sans);transition:all .13s
+}
+.log-toggle-btn.on{color:var(--amber);border-color:var(--amber)}
+.ver-badge{font-family:var(--mono);font-size:10px;color:var(--tm);margin-left:6px}
+
+/* ── App body ────────────────────────────────────────────────────── */
+.app-body{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+aside{
+  width:192px;flex-shrink:0;background:var(--s1);
+  border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow-y:auto
+}
+.sidebar-label{
+  padding:11px 14px 5px;font-size:10px;font-weight:600;
+  letter-spacing:.1em;color:var(--tm);text-transform:uppercase
+}
+.tool-item{
+  display:flex;align-items:center;gap:9px;padding:9px 14px;
+  cursor:pointer;border-left:2px solid transparent;transition:all .1s;user-select:none
+}
+.tool-item:hover{background:var(--s2)}
+.tool-item.on{background:var(--s2);border-left-color:var(--ic)}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--ic);flex-shrink:0}
+.tool-name{font-size:12.5px;font-weight:500;color:var(--ts);transition:color .1s}
+.tool-item.on .tool-name,.tool-item:hover .tool-name{color:var(--tx)}
+.tool-sub{font-size:10.5px;color:var(--tm);margin-top:1px}
+
+/* ── Main ────────────────────────────────────────────────────────── */
+main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Tabs ────────────────────────────────────────────────────────── */
+.tab-bar{
+  display:flex;align-items:center;gap:2px;padding:8px 18px 0;
+  background:var(--s1);border-bottom:1px solid var(--b1);flex-shrink:0
+}
+.tab-btn{
+  padding:7px 15px 9px;font-size:12.5px;font-weight:500;
+  border:none;background:transparent;color:var(--ts);
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  font-family:var(--sans);transition:all .1s
+}
+.tab-btn:hover{color:var(--tx)}
+.tab-btn.on{color:var(--tx);border-bottom-color:var(--amber)}
+
+/* ── Content ─────────────────────────────────────────────────────── */
+.content-area{flex:1;overflow-y:auto;padding:20px 24px 28px}
+.tool-header{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--b1)
+}
+.tool-header h1{font-family:var(--head);font-size:20px;font-weight:700;color:var(--tx)}
+.tool-badge{
+  padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;
+  letter-spacing:.07em;font-family:var(--mono)
+}
+.domain-tag{
+  font-size:10px;padding:2px 6px;border-radius:3px;
+  font-family:var(--mono);font-weight:600
+}
+.sect-label{
+  font-size:10px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--tm);margin-bottom:10px
+}
+
+/* ── Config ──────────────────────────────────────────────────────── */
+.cfg-row{
+  display:grid;grid-template-columns:145px 1fr;gap:8px 14px;
+  padding:9px 0;border-bottom:1px solid var(--b1);align-items:start
+}
+.cfg-row:last-child{border-bottom:none}
+.cfg-k{font-family:var(--mono);font-size:11.5px;color:var(--amber);padding-top:7px;line-height:1.4}
+.cfg-v{
+  font-family:var(--mono);font-size:11.5px;background:var(--s2);
+  border:1px solid var(--b1);border-radius:var(--r);padding:6px 10px;
+  cursor:pointer;white-space:pre;transition:border-color .13s;line-height:1.5
+}
+.cfg-v:hover{border-color:var(--b2)}
+.cfg-v.cp{border-color:var(--green) !important;background:color-mix(in srgb, var(--green) 8%, var(--s2))}
+.cfg-n{font-size:11.5px;color:var(--ts);margin-top:4px;line-height:1.5}
+
+/* ── Hotkeys ─────────────────────────────────────────────────────── */
+.hk-row{
+  display:grid;grid-template-columns:180px 1fr 90px;gap:10px;
+  align-items:center;padding:7px 8px;border-radius:var(--r);transition:background .1s
+}
+.hk-row:hover{background:var(--s2)}
+.hk-keys{display:flex;gap:3px;flex-wrap:wrap}
+.kbd{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  background:var(--s3);border:1px solid var(--b2);border-bottom:2px solid var(--b2);
+  border-radius:4px;padding:2px 6px;white-space:nowrap
+}
+.hk-act{font-size:12.5px;color:var(--tx)}
+.hk-ctx{font-size:11px;color:var(--tm);text-align:right}
+
+/* ── Handoffs ────────────────────────────────────────────────────── */
+.hcard{
+  background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);
+  padding:11px 13px;margin-bottom:8px;border-left-width:3px;border-left-style:solid
+}
+.hcard-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.hdir{font-size:10px;font-weight:600;font-family:var(--mono);padding:2px 7px;border-radius:3px}
+.dir-to{background:rgba(16,185,129,.15);color:var(--green)}
+.dir-fr{background:rgba(59,130,246,.15);color:var(--blue)}
+.htool{font-size:12.5px;font-weight:600}
+.hproc{font-size:12.5px;color:var(--ts);line-height:1.6}
+.hart{
+  display:inline-block;margin-top:6px;font-family:var(--mono);font-size:11px;
+  background:var(--s3);border:1px solid var(--b1);border-radius:3px;padding:2px 8px;color:var(--amber)
+}
+
+/* ── Protocols ───────────────────────────────────────────────────── */
+.pcard{
+  background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);
+  padding:11px 13px;margin-bottom:7px
+}
+.pname{font-family:var(--mono);font-size:12px;font-weight:600;margin-bottom:4px}
+.pfilt{
+  font-family:var(--mono);font-size:11px;color:var(--teal);
+  background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.25);
+  border-radius:3px;padding:2px 8px;display:inline-block;margin-bottom:5px;
+  cursor:pointer;transition:border-color .12s
+}
+.pfilt:hover{border-color:var(--teal)}
+.pfmt{
+  display:inline-block;font-family:var(--mono);font-size:10px;
+  background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.25);
+  color:var(--purple);border-radius:3px;padding:1px 6px;margin:0 4px 4px 0
+}
+.pnotes{font-size:12.5px;color:var(--ts);line-height:1.5}
+.cross-note{
+  margin-top:14px;background:var(--s2);border:1px solid var(--b1);
+  border-radius:var(--r);padding:13px 15px;font-size:12px;color:var(--ts);line-height:1.8
+}
+.cross-note b{color:var(--tx)}
+
+/* ── Diagnostic Log panel ────────────────────────────────────────── */
+#log-panel{
+  position:fixed;bottom:0;right:0;width:400px;
+  background:var(--s1);border:1px solid var(--b1);
+  border-right:none;border-bottom:none;
+  border-top-left-radius:8px;z-index:999;
+  display:none;flex-direction:column;
+  max-height:340px;
+}
+#log-panel.open{display:flex}
+.log-titlebar{
+  display:flex;align-items:center;padding:8px 12px;
+  border-bottom:1px solid var(--b1);flex-shrink:0;gap:8px;user-select:none;cursor:default
+}
+.log-title{font-size:12px;font-weight:600;color:var(--tx);flex:1}
+.log-subtitle{font-size:10px;color:var(--tm)}
+.log-actions{display:flex;gap:6px}
+.log-btn{
+  padding:2px 8px;font-size:11px;border-radius:3px;
+  border:1px solid var(--b2);color:var(--ts);cursor:pointer;
+  background:transparent;font-family:var(--sans);transition:all .1s
+}
+.log-btn:hover{color:var(--tx);border-color:var(--ts)}
+.log-btn.danger:hover{color:#f87171;border-color:#f87171}
+#log-entries{
+  flex:1;overflow-y:auto;padding:8px;
+  font-family:var(--mono);font-size:11.5px;color:var(--ts);line-height:1.7
+}
+.log-entry{display:flex;gap:8px;padding:2px 4px;border-radius:3px;transition:background .1s}
+.log-entry:hover{background:var(--s2)}
+.log-ts{color:var(--tm);flex-shrink:0;min-width:78px}
+.log-lvl{flex-shrink:0;min-width:50px;font-weight:600}
+.log-lvl.info{color:var(--blue)}
+.log-lvl.ok  {color:var(--green)}
+.log-lvl.warn{color:var(--amber)}
+.log-lvl.flag{color:var(--coral)}
+.log-msg{color:var(--ts);word-break:break-word}
+.log-flag-row{
+  display:flex;gap:6px;padding:8px;border-top:1px solid var(--b1);flex-shrink:0
+}
+#flag-input{
+  flex:1;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);
+  padding:5px 9px;color:var(--tx);font-family:var(--mono);font-size:11.5px;outline:none
+}
+#flag-input::placeholder{color:var(--tm)}
+#flag-input:focus{border-color:var(--b2)}
+#flag-submit{
+  padding:5px 12px;background:transparent;border:1px solid var(--b2);
+  color:var(--ts);border-radius:var(--r);cursor:pointer;font-size:12px;
+  font-family:var(--sans);transition:all .1s
+}
+#flag-submit:hover{color:var(--coral);border-color:var(--coral)}
+
+/* ── Claude Flow panel ──────────────────────────────────────────────────────── */
+#cf-panel {
+  position:fixed;right:0;top:48px;bottom:0;width:340px;
+  background:var(--s1);border-left:1px solid var(--b1);
+  display:flex;flex-direction:column;transform:translateX(100%);
+  transition:transform .2s ease;z-index:90;
+}
+#cf-panel.open { transform:translateX(0); }
+.cf-header {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-bottom:1px solid var(--b1);flex-shrink:0;
+}
+.cf-title { font-size:12px;font-weight:600;color:var(--green);letter-spacing:.06em;text-transform:uppercase; }
+.cf-tabs { display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--b1);flex-shrink:0; }
+.cf-tab {
+  padding:4px 10px;border-radius:4px;font-size:11px;font-weight:500;
+  border:1px solid var(--b2);color:var(--ts);cursor:pointer;background:transparent;
+  font-family:var(--sans);transition:all .1s;
+}
+.cf-tab.on { background:var(--green);color:#0a0a0a;border-color:var(--green); }
+.cf-body { flex:1;overflow-y:auto;padding:10px; }
+.cf-section { margin-bottom:14px; }
+.cf-section-label { font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--tm);text-transform:uppercase;margin-bottom:6px; }
+.cf-note-area {
+  width:100%;min-height:80px;background:var(--s2);border:1px solid var(--b2);
+  border-radius:var(--r);color:var(--tx);font-family:var(--mono);font-size:11px;
+  padding:7px 9px;resize:vertical;outline:none;
+}
+.cf-note-area:focus { border-color:var(--green); }
+.cf-btn {
+  padding:5px 12px;border-radius:var(--r);font-size:11px;font-weight:500;
+  border:1px solid var(--b2);color:var(--ts);cursor:pointer;background:transparent;
+  font-family:var(--sans);transition:all .1s;margin-top:5px;margin-right:4px;
+}
+.cf-btn:hover { color:var(--tx);border-color:var(--ts); }
+.cf-btn.primary { background:var(--green);color:#0a0a0a;border-color:var(--green); }
+.cf-btn.primary:hover { opacity:.85; }
+.cf-memory-list { list-style:none;margin:0;padding:0; }
+.cf-memory-item {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 8px;border-radius:4px;background:var(--s2);margin-bottom:4px;cursor:pointer;
+}
+.cf-memory-item:hover { background:var(--s3); }
+.cf-memory-key { font-family:var(--mono);font-size:11px;color:var(--tx); }
+.cf-memory-ts { font-size:10px;color:var(--tm); }
+.cf-agent-status { padding:8px;background:var(--s2);border-radius:var(--r);margin-bottom:8px; }
+.cf-agent-row { display:flex;align-items:center;gap:8px;padding:4px 0; }
+.cf-agent-dot { width:6px;height:6px;border-radius:50%;background:var(--tm);flex-shrink:0; }
+.cf-agent-dot.active { background:var(--green);box-shadow:0 0 6px var(--green); }
+.cf-agent-dot.running { background:var(--amber);animation:pulse .8s infinite; }
+.cf-agent-label { font-size:11px;color:var(--ts); }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+.cf-hook-log { font-family:var(--mono);font-size:10px;color:var(--ts);max-height:120px;overflow-y:auto; }
+.cf-hook-entry { padding:2px 0;border-bottom:1px solid var(--b1); }
+.cf-hook-ts { color:var(--tm); }
+.cf-hook-type { color:var(--green); }
+</style>
+</head>
+<body>
+
+<!-- App header -->
+<header class="app-header">
+  <div class="logo">RE<span>.</span>REF</div>
+  <div style="font-size:11px;color:var(--tm);font-family:var(--mono)">reverse engineering workflow reference</div>
+  <div class="domain-pills" id="dpills"></div>
+  <button class="log-toggle-btn" id="cfToggle" onclick="toggleCFPanel()" style="margin-right:4px;color:var(--green);border-color:var(--green)">⬡ claude flow</button>
+  <button class="log-toggle-btn" id="logToggle" onclick="toggleLog()">diagnostic log</button>
+  <span class="ver-badge" id="verBadge">v1.0.0</span>
+</header>
+
+<!-- App body -->
+<div class="app-body">
+  <aside id="sidebar">
+    <div class="sidebar-label">Tools</div>
+  </aside>
+  <main>
+    <div class="tab-bar" id="tabBar">
+      <button class="tab-btn on"  onclick="setTab('cfg')">Config & Settings</button>
+      <button class="tab-btn"     onclick="setTab('hk')">Hotkeys</button>
+      <button class="tab-btn"     onclick="setTab('ho')">Handoffs</button>
+      <button class="tab-btn"     onclick="setTab('pr')">Protocols</button>
+    </div>
+    <div class="content-area" id="contentArea"></div>
+  </main>
+</div>
+
+<!-- Diagnostic log panel -->
+<div id="log-panel">
+  <div class="log-titlebar">
+    <span class="log-title">Diagnostic log</span>
+    <span class="log-subtitle" id="log-count">0 entries</span>
+    <div class="log-actions">
+      <button class="log-btn" onclick="exportLog()">export .txt</button>
+      <button class="log-btn danger" onclick="clearLog()">clear</button>
+      <button class="log-btn" onclick="toggleLog()">close</button>
+    </div>
+  </div>
+  <div id="log-entries"></div>
+  <div class="log-flag-row">
+    <input id="flag-input" placeholder="Flag a missing feature or issue…" onkeydown="if(event.key==='Enter')flagFeature()" maxlength="200">
+    <button id="flag-submit" onclick="flagFeature()">flag</button>
+  </div>
+</div>
+
+<!-- Claude Flow Panel -->
+<div id="cf-panel">
+  <div class="cf-header">
+    <span class="cf-title">⬡ Claude Flow</span>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span id="cf-status-badge" style="font-size:10px;color:var(--green);font-family:var(--mono)">● connected</span>
+      <button class="log-toggle-btn" onclick="toggleCFPanel()" style="padding:2px 8px;font-size:10px">✕</button>
+    </div>
+  </div>
+  <div class="cf-tabs">
+    <button class="cf-tab on" onclick="setCFTab('memory')" id="cft-memory">Memory</button>
+    <button class="cf-tab" onclick="setCFTab('swarm')" id="cft-swarm">Swarm</button>
+    <button class="cf-tab" onclick="setCFTab('hooks')" id="cft-hooks">Hooks</button>
+  </div>
+  <div class="cf-body" id="cf-body">
+    <!-- rendered by renderCFPanel() -->
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   DATA
+══════════════════════════════════════════════════════════════════ */
+const D = {
+ghidra:{name:'Ghidra',sub:'NSA / Open source',color:'#8B5CF6',domains:['malware','automotive','iot','network'],
+cfg:[
+['Heap size','Edit support/launch.properties\nMAXMEM=8G','Raise to 4G+ for large firmware images'],
+['Decompiler timeout','Analysis > Auto Analyze > Decompiler\ntimeout → 300 seconds','Default 60s breaks on obfuscated functions'],
+['Aggressive analysis','Analysis > Auto Analyze\nuncheck: Aggressive Instruction Finder','Speeds initial load on packed binaries'],
+['Python 3 scripting','Install Ghidrathon extension\n(default is Jython 2.7)','Required for modern RE libraries'],
+['FLIRT / FID sigs','File > Install Extensions > Function ID\nTools > FunctionID > Create FidDb','Import .fidb for MSVC, GCC, libc matching'],
+['Architecture','Import dialog → Language selector\nECU: install TriCore/RH850 processor plugin','Non-standard CPUs need .ldefs processor module'],
+['Debugger / emulate','Debugger > Emulate → Sleigh emulator','Snippet-level validation without full sandbox'],
+['Project sharing','File > New Project > Shared\nghidra-server.bat start 13100','TLS cert required for production sharing'],
+],
+hk:[
+[['G'],'Go to address / label','Listing'],
+[['L'],'Rename label or function','Listing'],
+[['T'],'Retype variable or field','Decompiler'],
+[['F'],'Create function at cursor','Listing'],
+[['D'],'Disassemble at cursor','Listing'],
+[['Ctrl','E'],'Open decompiler window','Global'],
+[['Ctrl','Shift','E'],'Edit function signature','Decompiler'],
+[['X'],'Show XREFs to address','Listing'],
+[['Ctrl','L'],'Import library signatures (FID)','Global'],
+[['Ctrl','F'],'Search memory / strings','Global'],
+[['Ctrl','G'],'Go to file offset','Listing'],
+[['Alt','←'],'Navigate back','Global'],
+[['Space'],'Toggle listing ↔ decompiler sync','Global'],
+[['Ctrl','Z'],'Undo','Global'],
+],
+ho:[
+['to','x64dbg','Export symbol map via exportSymbols.py → import in x64dbg via Debug > Import Labels (.json). Use ret-sync plugin for live 2-way address sync.','json label file / ret-sync'],
+['to','IDA Pro','File > Export Program → XML. Import: idat -A -Sghidra_import.idc. CFG and type info may not fully round-trip.','Ghidra .xml export'],
+['from','Wireshark','Follow TCP/CAN stream → hex bytes → Ghidra Memory Search to locate protocol constants.','hex payload bytes'],
+['from','x64dbg','Unpack → Scylla > Dump → clean PE → drag into Ghidra with recovered IAT.','Scylla .exe dump'],
+['to','SavvyCAN','Note CAN IDs from capture → search raw ID bytes in ECU firmware binary to locate UDS handler routines.','CAN ID → Ghidra search'],
+],
+pr:[
+['.gpr / .rep','Ghidra project','Portable project dir. File > Archive Current Project to zip.'],
+['.xml','Ghidra program XML','Full export incl. functions, types, markup. Importable by IDA.'],
+['.fidb','Function ID database','Hashed function signatures for library matching.'],
+['.ldefs / .slaspec','Sleigh processor defs','Required for TriCore, RH850, ColdFire, AVR32.'],
+['.java / .py','Ghidra script','Java or Ghidrathon Python in Script Manager.'],
+]},
+ida:{name:'IDA Pro',sub:'Hex-Rays',color:'#EC4899',domains:['malware','automotive','iot','network'],
+cfg:[
+['Config files','%IDADIR%/cfg/ida.cfg — engine settings\n%IDADIR%/cfg/idagui.cfg — GUI layout','Edit directly; IDA restart required'],
+['Max array size','ida.cfg → MAX_ARRAY_SIZE = 0x100000','Default too small for large data sections'],
+['Plugins dir','%IDADIR%/plugins/*.dll (Windows)\n%IDADIR%/plugins/*.so (Linux)','Auto-loaded at startup'],
+['FLIRT sigs','%IDADIR%/sig/*.sig → View > Signatures → Insert','Community sigs: github.com/push0ebp/sig-database'],
+['Lumina','Options > Lumina > Enable\nNeeds active license + internet','Disable on air-gapped systems'],
+['Remote debugger','Debugger > Remote\nCopy dbgsrv/linux_server to target, port 23946','GDB server mode for Linux/Android targets'],
+['Hex-Rays options','Edit > Preferences > Decompiler\nMax node count: 100000','Raise for firmware fns with large switch tables'],
+['Auto-comment','Options > General > Disassembly → Auto comments','Inline operand hints (struct field names)'],
+],
+hk:[
+[['N'],'Rename name at cursor','Listing / Decompiler'],
+[['Y'],'Change type / function prototype','Listing / Decompiler'],
+[['D'],'Cycle data size byte/word/dword/qword','Listing'],
+[['C'],'Force disassemble at cursor','Listing'],
+[['F5'],'Decompile (Hex-Rays)','Listing'],
+[['X'],'Cross-references to operand','Listing'],
+[['G'],'Jump to address / name','Global'],
+[['A'],'Convert bytes to ASCII string','Listing'],
+[['Esc'],'Navigate back','Global'],
+[['Shift','F12'],'Open Strings window','Global'],
+[['Ctrl','S'],'Open Segments window','Global'],
+[['H'],'Toggle hex display for number','Listing'],
+[['Space'],'Toggle graph / linear view','Listing'],
+[['F9'],'Run (debugger)','Debugger'],
+],
+ho:[
+['to','x64dbg','File > Produce Output > MAP file → Plugins > MapLoader. Or ret-sync (idc/ret-sync.py) for live sync.','map symbol file'],
+['to','Ghidra','idat.exe -A -Sghidra_export.idc or IDA2Ghidra plugin. Names and types transfer.','IDA xml / idc export'],
+['from','Wireshark','Payload hex from stream → IDA Edit > Find > Byte sequence to locate protocol constants.','hex bytes from stream'],
+['from','x64dbg','Export labels (.json) → IDAPython import script to push names into IDA database.','IDAPython import script'],
+],
+pr:[
+['.idb / .i64','IDA database','IDA project. i64 for 64-bit. Contains analysis, names, types, comments.'],
+['.til','Type library','Struct/enum/type defs. File > Load File > Type Library.'],
+['.sig','FLIRT signature','Function recognition. Compile from .pat via sigmake.exe.'],
+['.map','Symbol map','Address + size + name. Compatible with x64dbg, x32dbg.'],
+['.idc / .py','IDA script','IDC legacy or IDAPython for modern work.'],
+]},
+dnspy:{name:'dnSpy Ex',sub:'.NET / Managed',color:'#6366F1',domains:['malware','iot'],
+cfg:[
+['Edit & Continue','Settings > Debugger > Enable Edit and Continue','Patch IL at runtime; bypass checks live'],
+['Break on module load','Debug > Windows > Modules\nRight-click → Break when module loaded','Catch early loader stubs and packed assemblies'],
+['Anti-anti-debug','dnSpy auto-patches IsDebuggerPresent\nFor timing: patch Thread.Sleep() in Edit Method view','Most .NET malware checks ManagedDebugger; dnSpy handles it'],
+['Assembly search path','Edit > Search Assemblies\nAdd GAC path and custom SDK paths','Required for IoT SDK GAC dependencies'],
+['IL / C# toggle','Decompiler toolbar: C# / IL / IL with C# / VisualBasic','IL is ground truth when Roslyn decompile is invalid'],
+['Mono target (IoT)','Debug > Start settings → select Mono debugger','Meadow, nanoFramework, MonoGame targets'],
+['Module save','File > Save Module → patches assembly in-place','Replace original binary for bypass testing'],
+],
+hk:[
+[['F5'],'Start / Continue execution','Debugger'],
+[['F9'],'Toggle breakpoint','Debugger'],
+[['F10'],'Step over','Debugger'],
+[['F11'],'Step into','Debugger'],
+[['Shift','F11'],'Step out of method','Debugger'],
+[['Ctrl','Shift','P'],'Find all references to symbol','Code view'],
+[['F12'],'Go to definition','Code view'],
+[['Ctrl','Shift','E'],'Edit method body (IL or C#)','Decompiler'],
+[['Ctrl','F'],'Find in current code','Decompiler'],
+[['Ctrl','Shift','F'],'Search all loaded assemblies','Global'],
+[['Ctrl','Shift','S'],'Save module (export patched assembly)','Global'],
+[['Ctrl','G'],'Go to metadata token / offset','Global'],
+],
+ho:[
+['to','x64dbg','Mixed-mode: dump native .dll from Debug > Windows > Memory → export region → open in x64dbg.','raw native dll memory dump'],
+['to','Ghidra','File > Export to Project → .cs files. Import both .cs and native host binary into Ghidra project.','decompiled cs source files'],
+['from','x64dbg','Mixed-mode: attach x64dbg (native) AND dnSpy (managed) simultaneously. Sync at P/Invoke boundary.','dual-attach session'],
+],
+pr:[
+['.dll / .exe','CLR PE (managed)','Standard PE with CLR header. Detect: CLI header RVA ≠ 0 at offset 0x168.'],
+['.il','MSIL / CIL bytecode','View in dnSpy IL pane; compare with ildasm.exe output.'],
+['.pdb','Portable PDB','Debug symbols; dnSpy auto-loads if alongside binary.'],
+['.nupkg','NuGet package','ZIP of managed assemblies. Open directly in dnSpy.'],
+['.exe / .dll','Mono runtime (IoT)','Open-source .NET for embedded Linux. Select Mono debugger.'],
+]},
+x64dbg:{name:'x64dbg',sub:'Windows debugger',color:'#14B8A6',domains:['malware','automotive','iot','network'],
+cfg:[
+['ScyllaHide','Plugins > ScyllaHide > Profile: Aggressive\nHooks: IsDebuggerPresent, NtQueryInfoProcess, Heap flags','Enable BEFORE first run on any malware target'],
+['Exception handling','Options > Preferences > Exceptions\nAdd: C0000005 (AV), 80000003 (single-step)\nCheck: Ignore all first-chance','Malware uses SEH extensively'],
+['Event breaks','Options > Preferences > Events\nCheck: TLS callbacks, DLL entry','Packers often run code before OEP in TLS/DLL init'],
+['Plugins dir','release/x64/plugins/ (64-bit)\nrelease/x32/plugins/ (32-bit)','Key: xAnalyzer, ScyllaHide, ret-sync, MapLoader, Labeless'],
+['ret-sync','Install plugin in x64dbg + companion in IDA/Ghidra\nConnect: localhost:9100 (configurable)','Live bidirectional EIP/RIP sync across tools'],
+['Label import','Debug > Import Labels → .json file\n[{"text":"func_name","address":"0x401000"}]','Import Ghidra/IDA symbol maps before dynamic analysis'],
+['Patch manager','Ctrl+P → view/edit patches\nRight-click → Export → .1337 diff format','Apply saved patches via Patch Manager > Apply .1337'],
+['Conditional log bp','bp 0x401000, "recv: {mem;[esp+8];64@0}"','Log 64 bytes from buffer pointer without pausing execution'],
+],
+hk:[
+[['F2'],'Toggle breakpoint at cursor','Disasm'],
+[['F7'],'Step into','Debugger'],
+[['F8'],'Step over','Debugger'],
+[['F9'],'Run','Debugger'],
+[['F4'],'Run to cursor','Debugger'],
+[['Ctrl','F2'],'Restart process','Debugger'],
+[['Alt','F9'],'Run to user code (skip system DLLs)','Debugger'],
+[['Ctrl','G'],'Go to expression / address','Global'],
+[['Ctrl','B'],'Open breakpoint manager','Global'],
+[[';'],'Add comment at cursor','Disasm'],
+[[':'],'Assemble instruction at cursor','Disasm'],
+[['Ctrl','A'],'Analyze current module','Disasm'],
+[['Ctrl','P'],'Open patch manager','Global'],
+[['Ctrl','T'],'Trace into (instruction trace)','Debugger'],
+[['Ctrl','M'],'Open memory map','Global'],
+[['Ctrl','Shift','B'],'Hardware breakpoint at cursor','Disasm'],
+],
+ho:[
+['from','Ghidra / IDA Pro','Import .json labels (Ghidra: exportSymbols.py) or .map (IDA: MapLoader). Enable ret-sync for live cursor sync — EIP/RIP updates in static tool automatically.','json / map / ret-sync'],
+['to','Ghidra / IDA Pro','Export labels (Debug > Export Labels) → .json for re-import. Dump unpacked PE via Scylla for fresh static analysis.','Scylla dump + json labels'],
+['to','Wireshark','Note wall-clock timestamp at WSARecv/recv break → correlate in Wireshark via frame.time filter. Conditional log bps dump buffer contents.','timestamp + buffer hex log'],
+['from','dnSpy Ex','Mixed-mode: run both debuggers simultaneously. HW breakpoints in x64dbg at P/Invoke native address; managed bps in dnSpy.','dual-debugger session'],
+],
+pr:[
+['.db','x64dbg session database','SQLite DB with labels, comments, breakpoints, patches. Keyed by executable hash.'],
+['.json','Label export','Array of {text, address}. Import into Ghidra/IDA via scripts.'],
+['Scylla .exe','PE dump','Unpacked + IAT-fixed PE. Import into Ghidra/IDA for static analysis.'],
+['.1337','Patch file','offset:old_bytes:new_bytes. Apply to clean binary via Patch Manager.'],
+]},
+ws:{name:'Wireshark',sub:'Packet analysis',color:'#F97316',domains:['malware','automotive','iot','network'],
+cfg:[
+['TLS decryption','Edit > Preferences > Protocols > TLS\nPre-Master-Secret log → SSLKEYLOGFILE path\nenv: SSLKEYLOGFILE=C:\\keys\\tls.log','Set env var BEFORE launching target (Chrome, Firefox, curl, OpenSSL)'],
+['Lua dissectors','%APPDATA%\\Wireshark\\plugins\\*.lua (Windows)\n~/.local/lib/wireshark/plugins/*.lua (Linux)','Analyze > Reload Lua Plugins — no restart needed'],
+['Capture filter (BPF)','tcp port 443\nhost 192.168.1.1\nnot arp','BPF at capture time reduces pcap size. Different syntax from display filters.'],
+['Config profiles','Edit > Configuration Profiles → New\nOne profile per engagement type','Stores coloring rules, columns, filters, prefs separately'],
+['Follow stream','Right-click > Follow > TCP/UDP/HTTP/TLS\nSave as raw binary or hex dump','Critical first step for any unknown protocol'],
+['Promiscuous mode','Capture > Options > Interface > Promiscuous','Required to capture traffic not addressed to your NIC'],
+['GeoIP / MaxMind','Edit > Preferences > Name Resolution\nMaxMind DB: GeoLite2-City.mmdb path','Free account at maxmind.com; shows country/ASN inline'],
+],
+hk:[
+[['Ctrl','F'],'Find packet (string, hex, regex)','Packet list'],
+[['Ctrl','G'],'Go to packet number','Packet list'],
+[['Ctrl','R'],'Start / stop capture','Global'],
+[['Ctrl','E'],'Open capture options','Global'],
+[['Ctrl','T'],'Mark all displayed packets','Packet list'],
+[['Alt','←'],'Back in navigation history','Global'],
+[['Tab'],'Move between panes (list/detail/bytes)','Global'],
+[['Ctrl','D'],'Toggle display filter toolbar','Global'],
+[['Ctrl','Shift','P'],'Open Preferences','Global'],
+[['Ctrl','M'],'Toggle mark on packet','Packet list'],
+],
+ho:[
+['to','Ghidra / IDA Pro','Follow TCP/CAN stream → Data as Hex → copy. Paste into Ghidra Memory Search or IDA Find > Byte sequence to locate protocol constants.','hex payload bytes'],
+['to','x64dbg','Note packet timestamp. Conditional log bp on WSARecv/recv in x64dbg. Correlate timestamps with Wireshark frame.time.','timestamp correlation'],
+['from','SavvyCAN','SavvyCAN: File > Export as pcap. Open in Wireshark — canbus dissector. Apply iso15765, uds, someip for higher-layer decode.','pcap from SavvyCAN'],
+['from','Serial Port Monitor','Export hex dump → text2pcap -l 147 dump.txt out.pcap → open in Wireshark. Write Lua dissector on USER0.','text2pcap pcap'],
+['to','Lua dissector','Proto("myproto","My Protocol")\nDissectorTable.get("tcp.port"):add(12345, p)\nAnalyze > Reload Lua Plugins','lua dissector plugin'],
+],
+pr:[
+['canbus','CAN bus','Raw CAN 2.0 (11/29-bit IDs). Frame: ID(4) DLC(1) Data(0-8). Requires SocketCAN capture or pcap from SavvyCAN.'],
+['iso15765','ISO-TP (ISO 15765-2)','Transport layer over CAN. Enables UDS. Wireshark reassembles multi-frame automatically.'],
+['uds','UDS (ISO 14229)','0x22 ReadDataById, 0x27 SecurityAccess (seed/key), 0x2E WriteData, 0x34/36/37 firmware update sequence.'],
+['doip','DoIP (ISO 13400)','Diagnostic over IP. UDP 13400 discovery, TCP 13400 data. Header: ver(2) type(2) len(4).'],
+['someip','SOME/IP','AUTOSAR. Port 30490+. Header: SvcID(2) MethodID(2) Len(4) Client(2) Session(2) Proto Iface Type RetCode.'],
+['mqtt','MQTT','IoT message bus. Port 1883 plain, 8883 TLS. CONNECT/PUBLISH/SUBSCRIBE. QoS 0/1/2.'],
+['coap','CoAP','UDP 5683 / DTLS 5684. RESTful. 4-byte header. GET/POST/PUT/DELETE. RTOS targets.'],
+['btle','BLE / BTLE','HCI snoop (Android) or nRF Sniffer. btatt filter for ATT/GATT. blesmp for pairing.'],
+]},
+can:{name:'CANalyzer / SavvyCAN',sub:'CAN bus analysis',color:'#CA8A04',domains:['automotive'],
+cfg:[
+['GVRET / Serial','Connection > GVRET Serial Port\nCOM port, baud: 1000000 (1M)','Default for ESP32/Arduino CAN interfaces (EVTV, Macchina)'],
+['SocketCAN (Linux)','Connection > SocketCAN → can0/can1\nip link set can0 up type can bitrate 500000','Requires can-utils + USB-CAN adapter (Kvaser, Peak, PCAN)'],
+['Bitrate','500K → powertrain/chassis HS-CAN\n125K → body CAN / LIN gateway\n1M → CAN FD / ADAS buses','Wrong bitrate = garbage frames. Brute-force upward from 125K.'],
+['DBC file loading','File > Load DBC File → select .dbc\nOrganizer panel shows decoded signals','Community DBCs: github.com/commaai/opendbc'],
+['Filters','Frame tab > Filters button\nFilter by: ID range, direction, count threshold','Start with narrow ID range to isolate target ECU traffic'],
+['Log format','File > Save: .log (native), .csv, .asc (Vector)','Use .asc for python-can library compatibility'],
+],
+hk:[
+[['Ctrl','R'],'Start / stop frame capture','Global'],
+[['Ctrl','S'],'Save current capture','Global'],
+[['Ctrl','O'],'Open saved log file','Global'],
+[['Ctrl','F'],'Find / filter frames by ID','Frame view'],
+[['Space'],'Pause / resume live view','Frame view'],
+],
+ho:[
+['to','Wireshark','File > Export as pcap → Wireshark canbus dissector. Apply iso15765, uds, someip for higher-layer analysis.','pcap export'],
+['to','Ghidra / IDA Pro','Identify CAN IDs for interesting functions → search raw ID bytes in ECU binary to locate handler routines.','CAN ID → binary search'],
+['to','Serial Port Monitor','ELM327 OBD: SPM captures AT commands. Cross-reference OBD PIDs with CAN ID 0x7DF broadcasts in SavvyCAN.','OBD PID correlation'],
+],
+pr:[
+['.dbc','DBC (Database CAN)','Defines messages (ID, len, sender) and signals (bit pos, len, scale, offset, unit). Edit with CANdb++ or open-source canmatrix.'],
+['.ldf','LDF (LIN Description File)','LIN bus equivalent of DBC. Frames, signals, schedule tables.'],
+['.log / .csv','SavvyCAN log','Columns: timestamp(ms), bus, extended, ID, DLC, D0-D7. Pandas-friendly.'],
+['.asc','Vector ASC log','From CANalyzer. Compatible with python-can ASCReader.'],
+['.blf','Vector BLF','Binary Logging Format. Read with python-can BLFReader or CANalyzer toolchain.'],
+['—','UDS frame (ISO 14229)','Over ISO-TP: PCI + service ID + subfn + data. SecurityAccess: 0x27 0x01 → seed response 0x67 0x01 + seed bytes.'],
+]},
+spm:{name:'Serial Port Monitor',sub:'UART / COM analysis',color:'#3B82F6',domains:['automotive','iot'],
+cfg:[
+['UART debug console','Baud: 115200 (common), 921600 (fw update)\n8N1, Flow: None','Check PCB silkscreen for TX/RX/GND pads; use CP2102 or CH340 adapter'],
+['OBD ELM327','Baud: 38400 (USB), 9600 (Bluetooth SPP)\n8N1, Flow: None','Clone ELM327s default to 9600; send ATZ then ATBR2 to raise'],
+['K-Line ISO 9141','Baud: 10400, 8N1\n5-baud init sequence required','Legacy OBD (pre-2008 Euro/Asian vehicles). Needs K-Line interface.'],
+['View mode','View > Split HEX + ASCII\nEnable: timestamps (absolute), color Rx/Tx','Timestamps critical for Wireshark correlation and frame boundary detection'],
+['Log / export','Session > Export → .csv or .txt\n.csv: timestamp, direction, hex bytes per row','Easiest format for scripted processing via pandas'],
+['Highlight filter','Filters > Add Highlight Rule → match hex pattern\nE.g. 7F (UDS negative response) → red','Speeds up manual protocol analysis significantly'],
+],
+hk:[
+[['Ctrl','R'],'Start / stop monitoring session','Global'],
+[['Ctrl','S'],'Save session log','Global'],
+[['Ctrl','F'],'Find in session data','Session view'],
+[['Ctrl','L'],'Clear session log','Global'],
+],
+ho:[
+['to','Wireshark','Export hex dump → text2pcap -l 147 dump.txt out.pcap (USER0 link type). Write Lua dissector on USER0.','text2pcap pcap'],
+['to','Ghidra / IDA Pro','Extract protocol constants / magic bytes → search byte sequences in firmware binary to locate command dispatch table.','constants → binary search'],
+['to','SavvyCAN','ELM327 OBD: SPM shows AT commands. SavvyCAN shows CAN ID 0x7DF frames. Correlate for full picture.','OBD PID ↔ CAN ID map'],
+['from','Ghidra','After locating UART handler in Ghidra (baud config regs / UART IRQ vector), set SPM to match discovered settings.','baud rate from Ghidra'],
+],
+pr:[
+['—','AT command set (ELM327)','ATZ reset, ATSP0 auto-detect protocol, ATDP show protocol, 0100 supported PIDs, 010C RPM, 010D speed. Response ends with ">".'],
+['—','OBD-II mode/PID','Mode 01 current data, 03 DTCs, 09 VIN (PID 02). Response: [mode+0x40][PID][data bytes]. VIN: 17 ASCII over multi-frame.'],
+['—','ISO 9141-2 / K-Line','5-baud init: send 0x33 at 5 baud → ECU: 0x55 + KB1 + KB2. Switch to 10400 baud. CS: sum of all bytes mod 256.'],
+['—','UART debug console','U-Boot / BusyBox via UART. Interrupt: any key during countdown. Strings to look for: "Hit any key", "Press Ctrl-C for recovery".'],
+['—','Frame boundary heuristics','Idle gap > 5ms = frame separator. Fixed-length: pattern at constant offset. Variable-length: length field at byte 1–3 of each burst.'],
+['—','text2pcap format','Hex dump with byte offsets, 16 bytes/line. -l 1 (Ethernet) or -l 147 (USER0). Output: valid pcap for Wireshark.'],
+]},
+};
+
+const TOOL_ORDER = ['ghidra','ida','dnspy','x64dbg','ws','can','spm'];
+const DOMAIN_COLORS = {all:'#888',malware:'#8B5CF6',automotive:'#CA8A04',iot:'#3B82F6',network:'#F97316'};
+let curDomain='all', curTool='ghidra', curTab='cfg';
+
+/* ══════════════════════════════════════════════════════════════════
+   DIAGNOSTIC LOG
+══════════════════════════════════════════════════════════════════ */
+let logEntries = [];
+
+function ts() {
+  const n = new Date();
+  return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+}
+
+function log(level, msg) {
+  logEntries.push({ts: ts(), level, msg});
+  if (logEntries.length > 300) logEntries.shift();
+  renderLog();
+}
+
+function renderLog() {
+  const el = document.getElementById('log-entries');
+  const count = document.getElementById('log-count');
+  count.textContent = `${logEntries.length} entr${logEntries.length === 1 ? 'y' : 'ies'}`;
+  el.innerHTML = logEntries.slice().reverse().map(e =>
+    `<div class="log-entry">
+      <span class="log-ts">${e.ts}</span>
+      <span class="log-lvl ${e.level}">[${e.level.toUpperCase()}]</span>
+      <span class="log-msg">${e.msg}</span>
+    </div>`
+  ).join('');
+}
+
+function toggleLog() {
+  const panel = document.getElementById('log-panel');
+  const btn   = document.getElementById('logToggle');
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('on', open);
+  if (open) log('info', 'Log panel opened');
+}
+
+function clearLog() {
+  logEntries = [];
+  renderLog();
+}
+
+function flagFeature() {
+  const inp = document.getElementById('flag-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  log('flag', `FLAGGED: ${val}`);
+  inp.value = '';
+  if (!document.getElementById('log-panel').classList.contains('open')) toggleLog();
+}
+
+async function exportLog() {
+  const text = logEntries.map(e => `${e.ts} [${e.level.toUpperCase()}] ${e.msg}`).join('\n');
+  if (window.electronAPI) {
+    const result = await window.electronAPI.saveLog(text);
+    if (result.ok) {
+      log('ok', `Log saved → ${result.path}`);
+    } else {
+      log('warn', `Save failed: ${result.error || 'cancelled'}`);
+    }
+  } else {
+    const blob = new Blob([text], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `re-ref-diagnostic-${Date.now()}.txt`;
+    a.click();
+    log('ok', 'Log exported via browser download');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   COPY HELPER
+══════════════════════════════════════════════════════════════════ */
+function copyText(text, el) {
+  try { navigator.clipboard.writeText(text); } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+  el.classList.add('cp');
+  log('ok', `Copied: ${text.split('\n')[0].slice(0,60)}${text.length > 60 ? '…' : ''}`);
+  setTimeout(() => el.classList.remove('cp'), 1100);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   UI STATE
+══════════════════════════════════════════════════════════════════ */
+function visibleTools() {
+  return TOOL_ORDER.filter(id => curDomain === 'all' || D[id].domains.includes(curDomain));
+}
+
+function setDomain(d) {
+  curDomain = d;
+  const tools = visibleTools();
+  if (!tools.includes(curTool)) curTool = tools[0];
+  log('info', `Domain filter → ${d}`);
+  renderDpills(); renderSidebar(); renderContent();
+}
+
+function setTool(id) {
+  curTool = id;
+  log('info', `Tool selected → ${D[id].name}`);
+  renderSidebar(); renderContent();
+}
+
+function setTab(t) {
+  curTab = t;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const matches = b.getAttribute('onclick').includes(`'${t}'`);
+    b.classList.toggle('on', matches);
+  });
+  const tabNames = {cfg:'Config & Settings', hk:'Hotkeys', ho:'Handoffs', pr:'Protocols'};
+  log('info', `Tab → ${tabNames[t]}`);
+  renderContent();
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════════════════════ */
+function renderDpills() {
+  const el = document.getElementById('dpills');
+  const domains = [['all','All'],['malware','Malware'],['automotive','Automotive'],['iot','Embedded/IoT'],['network','Network RE']];
+  el.innerHTML = domains.map(([d, label]) => {
+    const on = d === curDomain;
+    const c = DOMAIN_COLORS[d];
+    const style = on ? `background:${c};color:${d==='all'?'#fff':'#0a0a0a'};border-color:${c}` : '';
+    return `<button class="dpill${on?' on':''}" onclick="setDomain('${d}')" style="${style}">${label}</button>`;
+  }).join('');
+}
+
+function renderSidebar() {
+  const aside = document.getElementById('sidebar');
+  aside.innerHTML = '<div class="sidebar-label">Tools</div>';
+  visibleTools().forEach(id => {
+    const t = D[id];
+    const on = id === curTool;
+    const el = document.createElement('div');
+    el.className = `tool-item${on?' on':''}`;
+    el.style.setProperty('--ic', t.color);
+    el.innerHTML = `<div class="tdot"></div><div><div class="tool-name">${t.name}</div><div class="tool-sub">${t.sub}</div></div>`;
+    el.onclick = () => setTool(id);
+    aside.appendChild(el);
+  });
+}
+
+function renderContent() {
+  const t = D[curTool];
+  const area = document.getElementById('contentArea');
+  const domainTags = t.domains.map(d =>
+    `<span class="domain-tag" style="background:color-mix(in srgb,${DOMAIN_COLORS[d]} 14%,transparent);color:${DOMAIN_COLORS[d]};border:1px solid color-mix(in srgb,${DOMAIN_COLORS[d]} 30%,transparent)">${d}</span>`
+  ).join('');
+
+  let h = `<div class="tool-header">
+    <h1>${t.name}</h1>
+    <span class="tool-badge" style="background:color-mix(in srgb,${t.color} 14%,transparent);color:${t.color};border:1px solid color-mix(in srgb,${t.color} 30%,transparent)">${t.sub.toUpperCase()}</span>
+    ${domainTags}
+  </div>`;
+
+  if (curTab === 'cfg') {
+    h += `<div class="sect-label">Key settings & configuration</div>`;
+    t.cfg.forEach(([k, v, n]) => {
+      const id = 'c' + Math.random().toString(36).slice(2);
+      h += `<div class="cfg-row">
+        <div class="cfg-k">${k}</div>
+        <div>
+          <div class="cfg-v" id="${id}" onclick="copyText(this.innerText.trim(),this)">${v}</div>
+          ${n ? `<div class="cfg-n">${n}</div>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+
+  else if (curTab === 'hk') {
+    h += `<div class="sect-label">Hotkeys & commands</div>`;
+    t.hk.forEach(([keys, act, ctx]) => {
+      h += `<div class="hk-row">
+        <div class="hk-keys">${keys.map(k => `<span class="kbd">${k}</span>`).join('')}</div>
+        <div class="hk-act">${act}</div>
+        <div class="hk-ctx">${ctx}</div>
+      </div>`;
+    });
+  }
+
+  else if (curTab === 'ho') {
+    h += `<div class="sect-label">Handoff procedures</div>`;
+    t.ho.forEach(([dir, tool, proc, art]) => {
+      const tc = TOOL_ORDER.find(id => D[id].name === tool || tool.startsWith(D[id].name.split('/')[0].trim()));
+      const bc = tc ? D[tc].color : t.color;
+      h += `<div class="hcard" style="border-left-color:${bc}">
+        <div class="hcard-top">
+          <span class="hdir ${dir==='to'?'dir-to':'dir-fr'}">${dir==='to'?'→ TO':'← FROM'}</span>
+          <span class="htool" style="color:${bc}">${tool}</span>
+        </div>
+        <div class="hproc">${proc}</div>
+        <span class="hart">${art}</span>
+      </div>`;
+    });
+    h += `<div class="cross-note">
+      <b>ret-sync</b> — x64dbg plugin + IDA/Ghidra companion; live RIP/EIP sync over localhost:9100.<br>
+      <b>Scylla → Ghidra</b> — unpack in x64dbg, Scylla > Dump clean PE, import into Ghidra with recovered IAT.<br>
+      <b>text2pcap</b> — wraps raw hex dumps into pcap: <code style="font-size:11px;font-family:var(--mono)">text2pcap -l 147 in.hex out.pcap</code><br>
+      <b>CAN ID → firmware</b> — note ID in SavvyCAN, search raw bytes in ECU binary in Ghidra to find handler.
+    </div>`;
+  }
+
+  else if (curTab === 'pr') {
+    h += `<div class="sect-label">Protocol & format reference</div>`;
+    t.pr.forEach(([fmt, name, notes]) => {
+      const isFilter = ['canbus','iso15765','uds','doip','someip','mqtt','coap','btle'].includes(fmt);
+      h += `<div class="pcard">
+        <div class="pname">${name}</div>
+        ${fmt !== '—' ? `<span class="${isFilter?'pfilt':'pfmt'}" onclick="copyText(this.innerText,this)">${fmt}</span>` : ''}
+        <div class="pnotes">${notes}</div>
+      </div>`;
+    });
+  }
+
+  area.innerHTML = h;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════════ */
+async function init() {
+  log('info', 'RE Workflow Reference starting up…');
+  if (window.electronAPI) {
+    const ver = await window.electronAPI.getVersion();
+    document.getElementById('verBadge').textContent = `v${ver}`;
+    log('ok', `Running in Electron v${ver}`);
+  } else {
+    log('warn', 'Running in browser (not Electron) — save-log uses browser download fallback');
+  }
+  log('info', `Loaded ${TOOL_ORDER.length} tools across 4 domains`);
+  renderDpills(); renderSidebar(); renderContent();
+  log('ok', 'App ready');
+}
+
+init();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   CLAUDE FLOW PANEL
+══════════════════════════════════════════════════════════════════ */
+let cfPanelOpen = false;
+let cfTab = 'memory';
+let cfMemoryKeys = [];
+let cfHookLog = [];
+let cfSwarmAgents = [
+  { id: 'coordinator', label: 'Coordinator', state: 'idle' },
+  { id: 'researcher', label: 'Researcher', state: 'idle' },
+  { id: 'analyst', label: 'RE Analyst', state: 'idle' },
+  { id: 'reporter', label: 'Reporter', state: 'idle' },
+];
+
+function toggleCFPanel() {
+  cfPanelOpen = !cfPanelOpen;
+  document.getElementById('cf-panel').classList.toggle('open', cfPanelOpen);
+  document.getElementById('cfToggle').classList.toggle('on', cfPanelOpen);
+  if (cfPanelOpen) {
+    refreshCFMemory();
+    renderCFPanel();
+    fireHook('session-open', { tool: curTool, domain: curDomain });
+  }
+}
+
+function setCFTab(t) {
+  cfTab = t;
+  document.querySelectorAll('.cf-tab').forEach(b => b.classList.remove('on'));
+  document.getElementById(`cft-${t}`).classList.add('on');
+  renderCFPanel();
+}
+
+async function refreshCFMemory() {
+  if (!window.claudeFlow) return;
+  const result = await window.claudeFlow.memoryList('re-workflow');
+  if (result.ok) {
+    cfMemoryKeys = result.keys;
+    if (cfTab === 'memory') renderCFPanel();
+  }
+}
+
+function renderCFPanel() {
+  const body = document.getElementById('cf-body');
+  if (cfTab === 'memory') body.innerHTML = renderMemoryTab();
+  else if (cfTab === 'swarm') body.innerHTML = renderSwarmTab();
+  else body.innerHTML = renderHooksTab();
+}
+
+function renderMemoryTab() {
+  return `
+    <div class="cf-section">
+      <div class="cf-section-label">Save Note for Current Tool</div>
+      <textarea class="cf-note-area" id="cf-note-input" placeholder="Analysis notes, findings, IOCs..."></textarea>
+      <div>
+        <button class="cf-btn primary" onclick="saveNote()">Save to Memory</button>
+        <button class="cf-btn" onclick="refreshCFMemory()">Refresh</button>
+      </div>
+    </div>
+    <div class="cf-section">
+      <div class="cf-section-label">Stored Entries (${cfMemoryKeys.length})</div>
+      ${cfMemoryKeys.length === 0
+        ? '<div style="color:var(--tm);font-size:11px">No entries yet.</div>'
+        : `<ul class="cf-memory-list">${cfMemoryKeys.map(k =>
+            `<li class="cf-memory-item" onclick="loadNote('${k}')">
+              <span class="cf-memory-key">${k}</span>
+              <span style="font-size:10px;color:var(--ts)">↗</span>
+            </li>`).join('')}</ul>`}
+    </div>`;
+}
+
+function renderSwarmTab() {
+  const agentsHtml = cfSwarmAgents.map(a => `
+    <div class="cf-agent-row">
+      <div class="cf-agent-dot ${a.state === 'running' ? 'running' : a.state === 'done' ? 'active' : ''}"></div>
+      <span class="cf-agent-label">${a.label}</span>
+      <span style="margin-left:auto;font-size:10px;color:var(--tm)">${a.state}</span>
+    </div>`).join('');
+
+  return `
+    <div class="cf-section">
+      <div class="cf-section-label">Swarm Analysis</div>
+      <div class="cf-agent-status">${agentsHtml}</div>
+      <textarea class="cf-note-area" id="cf-swarm-task" placeholder="Describe RE task (e.g. 'Analyze CAN traffic from ECU dump and identify UDS handlers')" style="min-height:60px"></textarea>
+      <div>
+        <button class="cf-btn primary" onclick="runSwarmAnalysis()">▶ Run Swarm</button>
+        <button class="cf-btn" onclick="resetSwarm()">Reset</button>
+      </div>
+    </div>
+    <div class="cf-section" id="cf-swarm-result" style="display:none">
+      <div class="cf-section-label">Result</div>
+      <div id="cf-swarm-result-body" style="font-size:11px;color:var(--ts);font-family:var(--mono);white-space:pre-wrap"></div>
+    </div>`;
+}
+
+function renderHooksTab() {
+  const entries = cfHookLog.slice().reverse().map(h =>
+    `<div class="cf-hook-entry">
+      <span class="cf-hook-ts">${h.ts} </span>
+      <span class="cf-hook-type">[${h.type}] </span>
+      <span>${JSON.stringify(h.payload)}</span>
+    </div>`).join('') || '<div style="color:var(--tm);font-size:11px">No hooks fired yet.</div>';
+
+  return `
+    <div class="cf-section">
+      <div class="cf-section-label">Hook Log (${cfHookLog.length})</div>
+      <div class="cf-hook-log">${entries}</div>
+    </div>
+    <div class="cf-section">
+      <div class="cf-section-label">Manual Hooks</div>
+      <button class="cf-btn" onclick="fireHook('pre-task', {tool: curTool})">pre-task</button>
+      <button class="cf-btn" onclick="fireHook('post-task', {tool: curTool, success: true})">post-task</button>
+      <button class="cf-btn" onclick="fireHook('session-start', {})">session-start</button>
+    </div>`;
+}
+
+async function saveNote() {
+  const text = document.getElementById('cf-note-input').value.trim();
+  if (!text || !window.claudeFlow) return;
+  const key = `${curTool}-${Date.now()}`;
+  const result = await window.claudeFlow.memoryStore(key, { tool: curTool, domain: curDomain, note: text }, 're-workflow');
+  if (result.ok) {
+    document.getElementById('cf-note-input').value = '';
+    log('ok', `[CF] Note saved → ${key}`);
+    fireHook('post-edit', { tool: curTool, key });
+    await refreshCFMemory();
+  }
+}
+
+async function loadNote(key) {
+  if (!window.claudeFlow) return;
+  const result = await window.claudeFlow.memoryRetrieve(key, 're-workflow');
+  if (result.ok && result.data?.data?.note) {
+    document.getElementById('cf-note-input').value = result.data.data.note;
+    setCFTab('memory');
+    log('info', `[CF] Loaded note: ${key}`);
+  }
+}
+
+async function fireHook(type, payload) {
+  cfHookLog.push({ ts: new Date().toTimeString().slice(0,8), type, payload });
+  if (cfHookLog.length > 50) cfHookLog.shift();
+  if (window.claudeFlow) await window.claudeFlow.hook(type, payload);
+  if (cfTab === 'hooks') renderCFPanel();
+}
+
+async function runSwarmAnalysis() {
+  const task = document.getElementById('cf-swarm-task')?.value.trim();
+  if (!task) return;
+
+  cfSwarmAgents.forEach(a => a.state = 'idle');
+  renderCFPanel();
+
+  fireHook('pre-task', { task, tool: curTool });
+
+  const sequence = [
+    ['coordinator', 200],
+    ['researcher', 800],
+    ['analyst', 1400],
+    ['reporter', 600],
+  ];
+
+  for (const [id, delay] of sequence) {
+    await new Promise(r => setTimeout(r, delay));
+    const agent = cfSwarmAgents.find(a => a.id === id);
+    if (agent) { agent.state = 'running'; renderCFPanel(); }
+    await new Promise(r => setTimeout(r, delay));
+    if (agent) { agent.state = 'done'; renderCFPanel(); }
+  }
+
+  const toolKeywords = {
+    ghidra: ['binary','firmware','static','decompile','disassemble','function','ghidra'],
+    ida: ['ida','hex-rays','decompile','static','malware'],
+    dnspy: ['.net','managed','dotnet','dnspy','csharp','assembly'],
+    x64dbg: ['debug','dynamic','runtime','unpack','pack','x64','x32','windows'],
+    ws: ['network','traffic','packet','wireshark','pcap','tcp','udp','tls','http'],
+    can: ['can','canbus','automotive','ecu','uds','dbc','savvycan'],
+    spm: ['serial','uart','com','obd','elm327','baudrate','k-line'],
+  };
+
+  const taskLower = task.toLowerCase();
+  const matched = Object.entries(toolKeywords)
+    .filter(([, kws]) => kws.some(k => taskLower.includes(k)))
+    .map(([id]) => id);
+  const recommended = matched.length ? matched : [curTool];
+
+  const toolNames = { ghidra:'Ghidra', ida:'IDA Pro', dnspy:'dnSpy Ex', x64dbg:'x64dbg', ws:'Wireshark', can:'SavvyCAN', spm:'Serial Port Monitor' };
+  const steps = recommended.map((id, i) => `${i+1}. ${toolNames[id] || id}`).join(' → ');
+  const memKey = `swarm-${Date.now()}`;
+
+  const summary = `Task: ${task}\n\nRecommended tools:\n${recommended.map(id => `  • ${toolNames[id]}`).join('\n')}\n\nWorkflow:\n  ${steps}\n\nMemory key: ${memKey}`;
+
+  if (window.claudeFlow) {
+    await window.claudeFlow.memoryStore(memKey, { task, recommended, steps, tool: curTool }, 're-workflow');
+  }
+
+  const resultEl = document.getElementById('cf-swarm-result');
+  const bodyEl = document.getElementById('cf-swarm-result-body');
+  if (resultEl && bodyEl) {
+    resultEl.style.display = '';
+    bodyEl.textContent = summary;
+  }
+
+  log('ok', `[CF] Swarm analysis complete → ${memKey}`);
+  fireHook('post-task', { task, memKey, success: true });
+  refreshCFMemory();
+}
+
+function resetSwarm() {
+  cfSwarmAgents.forEach(a => a.state = 'idle');
+  const resultEl = document.getElementById('cf-swarm-result');
+  if (resultEl) resultEl.style.display = 'none';
+  renderCFPanel();
+}
+
+// Hook into existing tool/domain changes
+const _origSetTool = setTool;
+window.setTool = function(id) {
+  _origSetTool(id);
+  if (cfPanelOpen) fireHook('tool-switch', { tool: id });
+};
+
+const _origSetDomain = setDomain;
+window.setDomain = function(d) {
+  _origSetDomain(d);
+  if (cfPanelOpen) fireHook('domain-filter', { domain: d });
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+name: "@claude-flow/plugin-re-workflow"
+displayName: "RE Workflow Reference"
+description: "Multi-tool reverse engineering workflow reference with swarm analysis, memory persistence, and hook integration"
+version: "0.1.0"
+author: { id: "claude-flow-team", displayName: "Claude Flow Team", verified: true }
+license: "MIT"
+categories: ["security", "official"]
+tags: ["reverse-engineering", "ghidra", "ida", "x64dbg", "wireshark", "malware", "automotive", "iot"]
+minClaudeFlowVersion: "3.0.0"
+type: "integration"
+permissions: ["memory", "hooks", "swarm"]
+exports: ["ReWorkflowPlugin", "RE_TOOLS"]
+tools:
+  - re_workflow/list_tools
+  - re_workflow/get_tool
+  - re_workflow/search
+  - re_workflow/swarm_analyze
+  - re_workflow/memory_store
+  - re_workflow/memory_retrieve

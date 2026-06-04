@@ -1,0 +1,56 @@
+{
+  "name": "re-workflow-reference",
+  "version": "1.0.0",
+  "description": "Reverse Engineering Workflow Reference — multi-tool, multi-domain — with Claude Flow agent integration",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable",
+    "build-installer": "electron-builder --win nsis",
+    "build-all": "electron-builder --win --mac --linux"
+  },
+  "build": {
+    "appId": "com.re.workflow.reference",
+    "productName": "RE Workflow Reference",
+    "copyright": "Open source — no license",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "src/**/*"
+    ],
+    "win": {
+      "target": [
+        { "target": "portable", "arch": ["x64"] },
+        { "target": "nsis",     "arch": ["x64"] }
+      ],
+      "icon": "src/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "src/icon.ico",
+      "uninstallerIcon": "src/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RE Workflow Reference"
+    },
+    "portable": {
+      "artifactName": "RE-Workflow-Reference-portable.exe"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Development"
+    }
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.9.1",
+    "ws": "^8.16.0"
+  }
+}
