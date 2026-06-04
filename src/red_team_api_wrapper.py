@@ -1,25 +1,39 @@
 """
-RedTeamAPIWrapper - Anthropic API client for automated security/red team testing.
+RedTeamAPIWrapper - Anthropic API client for automated red team / prompt injection testing.
 Machine-readable JSON logging for CI/CD pipeline integration.
 """
 from __future__ import annotations
 
 import json
-import logging
 import os
 import sys
+import time
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Dict, Optional
 
 import anthropic
 from anthropic import DefaultHttpxClient
-from tenacity import (
-    RetryCallState,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
+
+try:
+    from tenacity import (
+        RetryCallState,
+        retry,
+        retry_if_exception_type,
+        stop_after_attempt,
+        wait_exponential,
+    )
+    _TENACITY_AVAILABLE = True
+except ImportError:
+    print(
+        json.dumps({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": "warning",
+            "event": "tenacity_missing",
+            "message": "tenacity not installed — retry logic disabled",
+        }),
+        file=sys.stderr,
+    )
+    _TENACITY_AVAILABLE = False
 
 try:
     from pydantic import BaseModel, Field
@@ -30,28 +44,14 @@ try:
         cache_creation_input_tokens: int = 0
         cache_read_input_tokens: int = 0
 
-    class APICallEvent(BaseModel):
-        timestamp: str
-        level: str
-        event: str
-        model: str = ""
-        input_tokens: int = 0
-        output_tokens: int = 0
-        cache_creation_input_tokens: int = 0
-        cache_read_input_tokens: int = 0
-        stop_reason: str = ""
-        extra: dict[str, Any] = Field(default_factory=dict)
-
     _PYDANTIC_AVAILABLE = True
 except ImportError:
     _PYDANTIC_AVAILABLE = False
-    TokenUsage = None  # type: ignore[assignment,misc]
-    APICallEvent = None  # type: ignore[assignment,misc]
 
 
 def _json_log(level: str, event: str, **extra: Any) -> None:
     record: dict[str, Any] = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "level": level,
         "event": event,
     }
@@ -66,37 +66,34 @@ def _log_retry(retry_state: RetryCallState) -> None:
         "api_retry",
         attempt=retry_state.attempt_number,
         error=str(exc) if exc else None,
-        next_wait_seconds=getattr(retry_state.next_action, "sleep", None),
     )
 
 
 class RedTeamAPIWrapper:
     """
-    Wrapper around the Anthropic Messages API for red team / security testing.
+    Reusable, robust wrapper for Anthropic API calls in automated red team testing.
 
     Proxy resolution order:
-      1. Explicit proxy_url constructor argument
+      1. Explicit proxy_base_url constructor argument
       2. HTTPS_PROXY / HTTP_PROXY environment variables (honoured by httpx automatically)
     """
 
-    DEFAULT_MODEL = "claude-opus-4-8"
-    DEFAULT_MAX_TOKENS = 4096
-
     def __init__(
         self,
-        api_key: str | None = None,
-        model: str = DEFAULT_MODEL,
-        max_tokens: int = DEFAULT_MAX_TOKENS,
-        proxy_url: str | None = None,
+        system_prompt: str,
+        model: str,
+        max_tokens: int,
+        temperature: float,
+        api_key: Optional[str] = None,
+        proxy_base_url: Optional[str] = None,
         max_retries: int = 3,
         base_wait: float = 1.0,
-        max_wait: float = 60.0,
+        max_wait: float = 30.0,
     ) -> None:
+        self.system_prompt = system_prompt
         self.model = model
         self.max_tokens = max_tokens
-        self._max_retries = max_retries
-        self._base_wait = base_wait
-        self._max_wait = max_wait
+        self.temperature = temperature
 
         resolved_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not resolved_key:
@@ -104,87 +101,54 @@ class RedTeamAPIWrapper:
                 "Anthropic API key required. Pass api_key= or set ANTHROPIC_API_KEY."
             )
 
-        if proxy_url:
-            http_client = DefaultHttpxClient(proxy=proxy_url)
+        if proxy_base_url:
+            http_client = DefaultHttpxClient(proxy=proxy_base_url)
             self._client = anthropic.Anthropic(api_key=resolved_key, http_client=http_client)
         else:
-            # httpx picks up http_proxy / https_proxy env vars automatically
+            # httpx automatically picks up HTTP_PROXY / HTTPS_PROXY env vars
             self._client = anthropic.Anthropic(api_key=resolved_key)
+
+        # Wrap _call with retry at construction time so max_retries is configurable
+        if _TENACITY_AVAILABLE:
+            self._send_with_retry = retry(
+                wait=wait_exponential(multiplier=base_wait, min=2, max=max_wait),
+                stop=stop_after_attempt(max_retries),
+                retry=retry_if_exception_type(anthropic.RateLimitError),
+                after=_log_retry,
+                reraise=True,
+            )(self._call_api)
+        else:
+            self._send_with_retry = self._call_api
 
         _json_log(
             "info",
             "wrapper_initialized",
             model=self.model,
             max_tokens=self.max_tokens,
-            proxy_configured=bool(proxy_url),
+            temperature=self.temperature,
+            proxy_configured=bool(proxy_base_url),
+            retry_enabled=_TENACITY_AVAILABLE,
         )
 
     # ------------------------------------------------------------------
-    # Core call — decorated by tenacity at call time (see send_message)
+    # Public interface
     # ------------------------------------------------------------------
 
-    def _call_api(
-        self,
-        messages: list[dict[str, Any]],
-        system: str | None,
-        temperature: float | None,
-        use_thinking: bool,
-    ) -> anthropic.types.Message:
-        kwargs: dict[str, Any] = {
-            "model": self.model,
-            "max_tokens": self.max_tokens,
-            "messages": messages,
-        }
-        if system:
-            kwargs["system"] = system
-        if use_thinking:
-            kwargs["thinking"] = {"type": "adaptive"}
-        elif temperature is not None:
-            kwargs["temperature"] = temperature
-
-        return self._client.messages.create(**kwargs)
-
-    def send_message(
-        self,
-        prompt: str,
-        system: str | None = None,
-        temperature: float | None = None,
-        use_thinking: bool = True,
-        extra_context: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+    def send(self, user_message: str) -> Dict[str, Any]:
         """
-        Send a message and return a structured result dict with token usage.
+        Send a prompt injection payload or test query.
 
         Returns
         -------
-        dict with keys: content, model, stop_reason, usage, raw_response
+        dict with keys: response, input_tokens, output_tokens,
+                        cache_creation_input_tokens, cache_read_input_tokens,
+                        stop_reason, total_time_ms
         """
-        messages = [{"role": "user", "content": prompt}]
-
-        @retry(
-            stop=stop_after_attempt(self._max_retries),
-            wait=wait_exponential(
-                multiplier=self._base_wait,
-                max=self._max_wait,
-                exp_base=2,
-            ),
-            retry=retry_if_exception_type(anthropic.RateLimitError),
-            after=_log_retry,
-            reraise=True,
-        )
-        def _with_retry() -> anthropic.types.Message:
-            return self._call_api(messages, system, temperature, use_thinking)
-
-        _json_log(
-            "info",
-            "api_call_start",
-            model=self.model,
-            prompt_chars=len(prompt),
-            **(extra_context or {}),
-        )
+        _json_log("info", "api_call_start", model=self.model, prompt_chars=len(user_message))
+        start_time = time.time()
 
         try:
-            response = _with_retry()
+            message_response = self._send_with_retry(user_message)
         except anthropic.RateLimitError as exc:
             _json_log("error", "rate_limit_exhausted", error=str(exc))
             raise
@@ -192,44 +156,49 @@ class RedTeamAPIWrapper:
             _json_log("error", "api_error", status_code=exc.status_code, error=str(exc))
             raise
 
-        usage = self._extract_usage(response)
-        content_text = self._extract_content(response)
-
-        _json_log(
-            "info",
-            "api_call_success",
-            model=response.model,
-            stop_reason=response.stop_reason,
-            **usage,
-            **(extra_context or {}),
-        )
-
-        return {
-            "content": content_text,
-            "model": response.model,
-            "stop_reason": response.stop_reason,
-            "usage": usage,
-            "raw_response": response,
-        }
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _extract_usage(response: anthropic.types.Message) -> dict[str, int]:
-        u = response.usage
-        return {
+        u = message_response.usage
+        # stop_reason lives on the message object, NOT on usage
+        stop_reason = message_response.stop_reason
+        usage = {
             "input_tokens": getattr(u, "input_tokens", 0),
             "output_tokens": getattr(u, "output_tokens", 0),
             "cache_creation_input_tokens": getattr(u, "cache_creation_input_tokens", 0),
             "cache_read_input_tokens": getattr(u, "cache_read_input_tokens", 0),
         }
+        total_time_ms = round((time.time() - start_time) * 1000, 2)
+
+        _json_log(
+            "info",
+            "api_call_success",
+            model=message_response.model,
+            status="SUCCESS",
+            stop_reason=stop_reason,
+            total_time_ms=total_time_ms,
+            **usage,
+        )
+
+        return {
+            "response": self._extract_text(message_response),
+            "stop_reason": stop_reason,
+            "total_time_ms": total_time_ms,
+            **usage,
+        }
+
+    # ------------------------------------------------------------------
+    # Internals
+    # ------------------------------------------------------------------
+
+    def _call_api(self, user_message: str) -> anthropic.types.Message:
+        return self._client.messages.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            system=self.system_prompt,
+            messages=[{"role": "user", "content": user_message}],
+        )
 
     @staticmethod
-    def _extract_content(response: anthropic.types.Message) -> str:
-        parts: list[str] = []
-        for block in response.content:
-            if hasattr(block, "text"):
-                parts.append(block.text)
-        return "\n".join(parts)
+    def _extract_text(response: anthropic.types.Message) -> str:
+        return "\n".join(
+            block.text for block in response.content if hasattr(block, "text")
+        )
