@@ -1,0 +1,26 @@
+{
+  "name": "@claude-flow/executor",
+  "version": "3.0.0-alpha.1",
+  "type": "module",
+  "description": "Universal sandboxed execution — bash, code (Python/JS/TS), HTTP, and MCP tool chaining",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "claude-flow-executor": "dist/cli.js"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./*": "./dist/*.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.16"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "v3alpha"
+  }
+}

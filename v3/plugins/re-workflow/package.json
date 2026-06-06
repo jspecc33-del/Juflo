@@ -1,0 +1,22 @@
+{
+  "name": "@claude-flow/plugin-re-workflow",
+  "version": "0.1.0",
+  "description": "RE Workflow Reference plugin — multi-tool reverse engineering reference with swarm analysis, memory, and hooks",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" },
+    "./tools": { "import": "./dist/mcp-tools.js", "types": "./dist/mcp-tools.d.ts" }
+  },
+  "files": ["dist", "README.md", "plugin.yaml"],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["re", "reverse-engineering", "ghidra", "ida", "x64dbg", "wireshark", "mcp", "claude-flow"],
+  "license": "MIT",
+  "devDependencies": { "typescript": "^5.4.0", "@types/node": "^20.0.0" }
+}
