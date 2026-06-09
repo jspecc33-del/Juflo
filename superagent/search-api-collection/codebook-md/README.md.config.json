@@ -1,0 +1,404 @@
+{
+  "1": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598046-ry3n4sqat",
+          "cellIndex": 1,
+          "languageId": "shellscript",
+          "code": "git clone <repository-url>\ncd search-api-collection",
+          "output": "5/7/2026, 4:16:37 PM\ngit clone <repository-url>\ncd search-api-collection\nfatal: repository '<repository-url>' does not exist\nfatal: repository '<repository-url>' does not exist\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.046Z",
+          "errorMessage": "Process exited with code 128",
+          "exitCode": 128,
+          "duration": 124
+        },
+        {
+          "id": "1778170590241-ttu5q2y4p",
+          "cellIndex": 1,
+          "languageId": "shellscript",
+          "code": "git clone <repository-url>\ncd search-api-collection",
+          "output": "5/7/2026, 4:16:26 PM\ngit clone <repository-url>\ncd search-api-collection\nfatal: repository '<repository-url>' does not exist\nfatal: repository '<repository-url>' does not exist\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.241Z",
+          "errorMessage": "Process exited with code 128",
+          "exitCode": 128,
+          "duration": 3865
+        }
+      ]
+    }
+  },
+  "3": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598413-dnl55nb6l",
+          "cellIndex": 3,
+          "languageId": "shellscript",
+          "code": "pip install -r requirements.txt",
+          "output": "5/7/2026, 4:16:38 PM\npip install -r requirements.txt\nerror: externally-managed-environment\n\n× This environment is externally managed\n╰─> To install Python packages system-wide, try apt install\n    python3-xyz, where xyz is the package you are trying to\n    install.\n    \n    If you wish to install a non-Debian-packaged Python package,\n    create a virtual environment using python3 -m venv path/to/venv.\n    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make\n    sure you have python3-full installed.\n    \n    If you wish to install a non-Debian packaged Python application,\n    it may be easiest to use pipx install xyz, which will manage a\n    virtual environment for you. Make sure you have pipx installed.\n    \n    See /usr/share/doc/python3.12/README.venv for more information.\n\nnote: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.\nhint: See PEP 668 for the detailed specification.\nerror: externally-managed-environment\n\n× This environment is externally managed\n╰─> To install Python packages system-wide, try apt install\n    python3-xyz, where xyz is the package you are trying to\n    install.\n    \n    If you wish to install a non-Debian-packaged Python package,\n    create a virtual environment using python3 -m venv path/to/venv.\n    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make\n    sure you have python3-full installed.\n    \n    If you wish to install a non-Debian packaged Python application,\n    it may be easiest to use pipx install xyz, which will manage a\n    virtual environment for you. Make sure you have pipx installed.\n    \n    See /usr/share/doc/python3.12/README.venv for more information.\n\nnote: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.\nhint: See PEP 668 for the detailed specification.\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.413Z",
+          "errorMessage": "Process exited with code 1",
+          "exitCode": 1,
+          "duration": 366
+        },
+        {
+          "id": "1778170590807-nemfl3xls",
+          "cellIndex": 3,
+          "languageId": "shellscript",
+          "code": "pip install -r requirements.txt",
+          "output": "5/7/2026, 4:16:30 PM\npip install -r requirements.txt\nerror: externally-managed-environment\n\n× This environment is externally managed\n╰─> To install Python packages system-wide, try apt install\n    python3-xyz, where xyz is the package you are trying to\n    install.\n    \n    If you wish to install a non-Debian-packaged Python package,\n    create a virtual environment using python3 -m venv path/to/venv.\n    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make\n    sure you have python3-full installed.\n    \n    If you wish to install a non-Debian packaged Python application,\n    it may be easiest to use pipx install xyz, which will manage a\n    virtual environment for you. Make sure you have pipx installed.\n    \n    See /usr/share/doc/python3.12/README.venv for more information.\n\nnote: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.\nhint: See PEP 668 for the detailed specification.\nerror: externally-managed-environment\n\n× This environment is externally managed\n╰─> To install Python packages system-wide, try apt install\n    python3-xyz, where xyz is the package you are trying to\n    install.\n    \n    If you wish to install a non-Debian-packaged Python package,\n    create a virtual environment using python3 -m venv path/to/venv.\n    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make\n    sure you have python3-full installed.\n    \n    If you wish to install a non-Debian packaged Python application,\n    it may be easiest to use pipx install xyz, which will manage a\n    virtual environment for you. Make sure you have pipx installed.\n    \n    See /usr/share/doc/python3.12/README.venv for more information.\n\nnote: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.\nhint: See PEP 668 for the detailed specification.\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.807Z",
+          "errorMessage": "Process exited with code 1",
+          "exitCode": 1,
+          "duration": 564
+        }
+      ]
+    }
+  },
+  "5": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598529-egvucc494",
+          "cellIndex": 5,
+          "languageId": "shellscript",
+          "code": "cp .env.example .env\n# Edit .env with your actual API keys",
+          "output": "5/7/2026, 4:16:38 PM\ncp .env.example .env\ncp: cannot stat '.env.example': No such file or directory\ncp: cannot stat '.env.example': No such file or directory\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.529Z",
+          "errorMessage": "Process exited with code 1",
+          "exitCode": 1,
+          "duration": 114
+        },
+        {
+          "id": "1778170590930-fyfsvjgiw",
+          "cellIndex": 5,
+          "languageId": "shellscript",
+          "code": "cp .env.example .env\n# Edit .env with your actual API keys",
+          "output": "5/7/2026, 4:16:30 PM\ncp .env.example .env\ncp: cannot stat '.env.example': No such file or directory\ncp: cannot stat '.env.example': No such file or directory\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.930Z",
+          "errorMessage": "Process exited with code 1",
+          "exitCode": 1,
+          "duration": 122
+        }
+      ]
+    }
+  },
+  "7": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598538-smv3lp2s3",
+          "cellIndex": 7,
+          "languageId": "python",
+          "code": "import asyncio\nfrom src.manager import SearchAPICollection, SearchStrategy\nfrom src.base import SearchType\n\nasync def main():\n    config = {\n        \"strategy\": \"primary\",\n        \"primary_api\": \"tavily\",\n        \"apis\": {\n            \"tavily\": {\n                \"api_key\": \"your_tavily_api_key\",\n                \"config\": {\"search_depth\": \"basic\"}\n            }\n        }\n    }\n    \n    async with SearchAPICollection(config) as search:\n        results = await search.search(\n            query=\"Python async programming\",\n            search_type=SearchType.WEB,\n            num_results=5\n        )\n        \n        for result in results.results:\n            print(f\"{result.title}\")\n            print(f\"{result.url}\")\n            print(f\"{result.snippet}\")\n            print()\n\nasyncio.run(main())",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.538Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 8
+        },
+        {
+          "id": "1778170590939-s06x464mn",
+          "cellIndex": 7,
+          "languageId": "python",
+          "code": "import asyncio\nfrom src.manager import SearchAPICollection, SearchStrategy\nfrom src.base import SearchType\n\nasync def main():\n    config = {\n        \"strategy\": \"primary\",\n        \"primary_api\": \"tavily\",\n        \"apis\": {\n            \"tavily\": {\n                \"api_key\": \"your_tavily_api_key\",\n                \"config\": {\"search_depth\": \"basic\"}\n            }\n        }\n    }\n    \n    async with SearchAPICollection(config) as search:\n        results = await search.search(\n            query=\"Python async programming\",\n            search_type=SearchType.WEB,\n            num_results=5\n        )\n        \n        for result in results.results:\n            print(f\"{result.title}\")\n            print(f\"{result.url}\")\n            print(f\"{result.snippet}\")\n            print()\n\nasyncio.run(main())",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.939Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 8
+        }
+      ]
+    }
+  },
+  "9": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598549-ya19p4wkf",
+          "cellIndex": 9,
+          "languageId": "python",
+          "code": "config = {\n    \"strategy\": \"fallback\",\n    \"primary_api\": \"tavily\",\n    \"apis\": {\n        \"tavily\": {\"api_key\": \"your_tavily_key\"},\n        \"brave\": {\"api_key\": \"your_brave_key\"},\n        \"serpapi\": {\"api_key\": \"your_serpapi_key\"}\n    }\n}\n\n# If Tavily fails, it will automatically try Brave, then SerpAPI",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.549Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 9
+        },
+        {
+          "id": "1778170590948-lo15mo3hw",
+          "cellIndex": 9,
+          "languageId": "python",
+          "code": "config = {\n    \"strategy\": \"fallback\",\n    \"primary_api\": \"tavily\",\n    \"apis\": {\n        \"tavily\": {\"api_key\": \"your_tavily_key\"},\n        \"brave\": {\"api_key\": \"your_brave_key\"},\n        \"serpapi\": {\"api_key\": \"your_serpapi_key\"}\n    }\n}\n\n# If Tavily fails, it will automatically try Brave, then SerpAPI",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.948Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 8
+        }
+      ]
+    }
+  },
+  "11": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598558-ln2epko8a",
+          "cellIndex": 11,
+          "languageId": "python",
+          "code": "config = {\n    \"strategy\": \"parallel\",\n    \"apis\": {\n        \"tavily\": {\"api_key\": \"your_tavily_key\"},\n        \"brave\": {\"api_key\": \"your_brave_key\"}\n    }\n}\n\n# Searches both APIs simultaneously and merges results",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.558Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 8
+        },
+        {
+          "id": "1778170590958-bxlrz1m23",
+          "cellIndex": 11,
+          "languageId": "python",
+          "code": "config = {\n    \"strategy\": \"parallel\",\n    \"apis\": {\n        \"tavily\": {\"api_key\": \"your_tavily_key\"},\n        \"brave\": {\"api_key\": \"your_brave_key\"}\n    }\n}\n\n# Searches both APIs simultaneously and merges results",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.958Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 9
+        }
+      ]
+    }
+  },
+  "13": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598567-atpa9p3vx",
+          "cellIndex": 13,
+          "languageId": "yaml",
+          "code": "strategy: \"fallback\"\nprimary_api: \"tavily\"\n\napis:\n  tavily:\n    api_key: \"YOUR_TAVILY_API_KEY\"\n    config:\n      search_depth: \"basic\"\n      include_answer: true\n  \n  brave:\n    api_key: \"YOUR_BRAVE_API_KEY\"\n    config:\n      country: \"US\"\n      search_lang: \"en\"",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.567Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 7
+        },
+        {
+          "id": "1778170590966-aopb8h93c",
+          "cellIndex": 13,
+          "languageId": "yaml",
+          "code": "strategy: \"fallback\"\nprimary_api: \"tavily\"\n\napis:\n  tavily:\n    api_key: \"YOUR_TAVILY_API_KEY\"\n    config:\n      search_depth: \"basic\"\n      include_answer: true\n  \n  brave:\n    api_key: \"YOUR_BRAVE_API_KEY\"\n    config:\n      country: \"US\"\n      search_lang: \"en\"",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.966Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 7
+        }
+      ]
+    }
+  },
+  "17": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598577-my9va3sa2",
+          "cellIndex": 17,
+          "languageId": "python",
+          "code": "# Include only specific domains\nresults = await search.search(\n    query=\"machine learning\",\n    include_domains=[\"arxiv.org\", \"openai.com\"]\n)\n\n# Exclude specific domains\nresults = await search.search(\n    query=\"climate change\",\n    exclude_domains=[\"facebook.com\", \"twitter.com\"]\n)",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.577Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 8
+        },
+        {
+          "id": "1778170590978-921p9m0qb",
+          "cellIndex": 17,
+          "languageId": "python",
+          "code": "# Include only specific domains\nresults = await search.search(\n    query=\"machine learning\",\n    include_domains=[\"arxiv.org\", \"openai.com\"]\n)\n\n# Exclude specific domains\nresults = await search.search(\n    query=\"climate change\",\n    exclude_domains=[\"facebook.com\", \"twitter.com\"]\n)",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.978Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 10
+        }
+      ]
+    }
+  },
+  "19": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598586-dksfe0ys4",
+          "cellIndex": 19,
+          "languageId": "python",
+          "code": "# Brave Search\nconfig = {\n    \"apis\": {\n        \"brave\": {\n            \"api_key\": \"your_key\",\n            \"config\": {\n                \"country\": \"GB\",\n                \"search_lang\": \"en\"\n            }\n        }\n    }\n}\n\n# SerpAPI\nconfig = {\n    \"apis\": {\n        \"serpapi\": {\n            \"api_key\": \"your_key\",\n            \"config\": {\n                \"gl\": \"gb\",  # Country code\n                \"hl\": \"en\"   # Language code\n            }\n        }\n    }\n}",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.587Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 8
+        },
+        {
+          "id": "1778170590987-e27w1ba45",
+          "cellIndex": 19,
+          "languageId": "python",
+          "code": "# Brave Search\nconfig = {\n    \"apis\": {\n        \"brave\": {\n            \"api_key\": \"your_key\",\n            \"config\": {\n                \"country\": \"GB\",\n                \"search_lang\": \"en\"\n            }\n        }\n    }\n}\n\n# SerpAPI\nconfig = {\n    \"apis\": {\n        \"serpapi\": {\n            \"api_key\": \"your_key\",\n            \"config\": {\n                \"gl\": \"gb\",  # Country code\n                \"hl\": \"en\"   # Language code\n            }\n        }\n    }\n}",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.987Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 8
+        }
+      ]
+    }
+  },
+  "21": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598597-nnwh4thun",
+          "cellIndex": 21,
+          "languageId": "python",
+          "code": "# Get direct answers\nasync def get_tavily_answer():\n    tavily_api = TavilyAPIIntegration(api_key=\"your_key\")\n    answer = await tavily_api.get_answer(\"What is quantum computing?\")\n    return answer\n\n# Extract content from URLs\nasync def extract_tavily_content():\n    tavily_api = TavilyAPIIntegration(api_key=\"your_key\")\n    content = await tavily_api.extract_content([\n        \"https://example.com/article1\",\n        \"https://example.com/article2\"\n    ])\n    return content",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.597Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 9
+        },
+        {
+          "id": "1778170590996-yezkfjvku",
+          "cellIndex": 21,
+          "languageId": "python",
+          "code": "# Get direct answers\nasync def get_tavily_answer():\n    tavily_api = TavilyAPIIntegration(api_key=\"your_key\")\n    answer = await tavily_api.get_answer(\"What is quantum computing?\")\n    return answer\n\n# Extract content from URLs\nasync def extract_tavily_content():\n    tavily_api = TavilyAPIIntegration(api_key=\"your_key\")\n    content = await tavily_api.extract_content([\n        \"https://example.com/article1\",\n        \"https://example.com/article2\"\n    ])\n    return content",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:30.996Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 7
+        }
+      ]
+    }
+  },
+  "23": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598606-z716hwi0z",
+          "cellIndex": 23,
+          "languageId": "python",
+          "code": "# Scrape specific URLs\nasync def scrape_with_scraperapi():\n    scraper_api = ScraperAPIIntegration(api_key=\"your_key\")\n    html = await scraper_api.scrape_url(\"https://example.com\")\n    return html\n\n# Get account info\nasync def get_scraperapi_account():\n    scraper_api = ScraperAPIIntegration(api_key=\"your_key\")\n    account_info = await scraper_api.get_account_info()\n    return account_info",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.606Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 8
+        },
+        {
+          "id": "1778170591006-o6vv8s68a",
+          "cellIndex": 23,
+          "languageId": "python",
+          "code": "# Scrape specific URLs\nasync def scrape_with_scraperapi():\n    scraper_api = ScraperAPIIntegration(api_key=\"your_key\")\n    html = await scraper_api.scrape_url(\"https://example.com\")\n    return html\n\n# Get account info\nasync def get_scraperapi_account():\n    scraper_api = ScraperAPIIntegration(api_key=\"your_key\")\n    account_info = await scraper_api.get_account_info()\n    return account_info",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:31.006Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 9
+        }
+      ]
+    }
+  },
+  "25": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598616-iam42sqz4",
+          "cellIndex": 25,
+          "languageId": "python",
+          "code": "# Run a custom Apify actor\nasync def run_custom_apify_actor():\n    apify_api = ApifyAPIIntegration(api_key=\"your_key\")\n    \n    # Get available actor versions\n    versions = await apify_api.get_actor_versions(\"apify/web-scraper\")\n    \n    # Run custom actor with specific input\n    custom_input = {\n        \"startUrls\": [{\"url\": \"https://example.com\"}],\n        \"maxCrawledPages\": 10\n    }\n    \n    result = await apify_api.run_custom_actor(\n        actor_id=\"apify/web-scraper\",\n        input_data=custom_input,\n        wait_for_completion=True\n    )\n    return result\n\n# Get actor versions\nasync def get_actor_versions():\n    apify_api = ApifyAPIIntegration(api_key=\"your_key\")\n    versions = await apify_api.get_actor_versions(\"apify/web-scraper\")\n    return versions",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.616Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 9
+        },
+        {
+          "id": "1778170591017-fmjapv168",
+          "cellIndex": 25,
+          "languageId": "python",
+          "code": "# Run a custom Apify actor\nasync def run_custom_apify_actor():\n    apify_api = ApifyAPIIntegration(api_key=\"your_key\")\n    \n    # Get available actor versions\n    versions = await apify_api.get_actor_versions(\"apify/web-scraper\")\n    \n    # Run custom actor with specific input\n    custom_input = {\n        \"startUrls\": [{\"url\": \"https://example.com\"}],\n        \"maxCrawledPages\": 10\n    }\n    \n    result = await apify_api.run_custom_actor(\n        actor_id=\"apify/web-scraper\",\n        input_data=custom_input,\n        wait_for_completion=True\n    )\n    return result\n\n# Get actor versions\nasync def get_actor_versions():\n    apify_api = ApifyAPIIntegration(api_key=\"your_key\")\n    versions = await apify_api.get_actor_versions(\"apify/web-scraper\")\n    return versions",
+          "output": "",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:31.017Z",
+          "errorMessage": "Error: Failed to determine execution path for setting \"./codebook-md/\": Cannot resolve relative execPath \"./codebook-md/\" starting with './' or '../' without an active file or workspace folder.",
+          "duration": 9
+        }
+      ]
+    }
+  },
+  "27": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598781-xi8ewiqsl",
+          "cellIndex": 27,
+          "languageId": "shellscript",
+          "code": "python examples/basic_usage.py",
+          "output": "5/7/2026, 4:16:38 PM\npython examples/basic_usage.py\n/bin/bash: line 4: python: command not found\n/bin/bash: line 4: python: command not found\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.781Z",
+          "errorMessage": "Process exited with code 127",
+          "exitCode": 127,
+          "duration": 164
+        },
+        {
+          "id": "1778170591229-5m3m70irt",
+          "cellIndex": 27,
+          "languageId": "shellscript",
+          "code": "python examples/basic_usage.py",
+          "output": "5/7/2026, 4:16:31 PM\npython examples/basic_usage.py\n/bin/bash: line 4: python: command not found\n/bin/bash: line 4: python: command not found\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:31.229Z",
+          "errorMessage": "Process exited with code 127",
+          "exitCode": 127,
+          "duration": 211
+        }
+      ]
+    }
+  },
+  "29": {
+    "config": {
+      "executionHistory": [
+        {
+          "id": "1778170598951-5es0rr81h",
+          "cellIndex": 29,
+          "languageId": "shellscript",
+          "code": "python examples/advanced_usage.py",
+          "output": "5/7/2026, 4:16:38 PM\npython examples/advanced_usage.py\n/bin/bash: line 4: python: command not found\n/bin/bash: line 4: python: command not found\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:38.951Z",
+          "errorMessage": "Process exited with code 127",
+          "exitCode": 127,
+          "duration": 169
+        },
+        {
+          "id": "1778170591405-kouzjjtsw",
+          "cellIndex": 29,
+          "languageId": "shellscript",
+          "code": "python examples/advanced_usage.py",
+          "output": "5/7/2026, 4:16:31 PM\npython examples/advanced_usage.py\n/bin/bash: line 4: python: command not found\n/bin/bash: line 4: python: command not found\n\n",
+          "status": "failure",
+          "timestamp": "2026-05-07T16:16:31.405Z",
+          "errorMessage": "Process exited with code 127",
+          "exitCode": 127,
+          "duration": 174
+        }
+      ]
+    }
+  }
+}
