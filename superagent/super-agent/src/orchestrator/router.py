@@ -123,21 +123,23 @@ class ToolRouter:
         """Analyze natural language request and create appropriate task"""
         if context is None:
             context = {}
-        
-        # First try pattern-based routing
+
+        # Tier 1: fast regex patterns
         pattern_result = self._analyze_with_patterns(request)
-        
-        # Use AI for complex requests or low confidence patterns
-        if pattern_result.confidence < 0.7:
-            ai_result = await self._analyze_with_ai(request, context)
-            
-            # Combine results, preferring AI for complex requests
-            if ai_result.confidence > pattern_result.confidence:
-                routing_decision = ai_result
-            else:
-                routing_decision = pattern_result
-        else:
+        if pattern_result.confidence >= 0.6:
             routing_decision = pattern_result
+        else:
+            # Tier 2: keyword vector search via AgentDB bridge
+            vector_result = await self._analyze_with_vectors(request)
+            if vector_result.confidence >= 0.7:
+                routing_decision = vector_result
+            else:
+                # Tier 3: LLM fallback
+                ai_result = await self._analyze_with_ai(request, context)
+                routing_decision = max(
+                    [pattern_result, vector_result, ai_result],
+                    key=lambda r: r.confidence
+                )
         
         # Create task from routing decision
         task = Task(
@@ -155,6 +157,36 @@ class ToolRouter:
         
         return task
     
+    async def _analyze_with_vectors(self, request: str) -> RoutingDecision:
+        """Analyze request using AgentDB bridge keyword-vector routing."""
+        try:
+            from .jj_tracker import AgentDBBridge
+            bridge = await AgentDBBridge.get()
+            result = await bridge.call(op='route', query=request, k=3)
+            hits = result.get('results', [])
+            if not hits:
+                raise ValueError("empty results")
+            top = hits[0]
+            task_type = TaskType(top['id'])
+            confidence = float(top.get('score', 0.0))
+            parameters = self._extract_parameters(request, task_type)
+            return RoutingDecision(
+                task_type=task_type,
+                confidence=confidence,
+                parameters=parameters,
+                preferred_tools=self._get_preferred_tools(task_type),
+                reasoning=f"Vector routing: {confidence:.2f} confidence"
+            )
+        except Exception as e:
+            self.logger.debug(f"Vector routing failed: {e}")
+            return RoutingDecision(
+                task_type=TaskType.GENERAL_QUERY,
+                confidence=0.0,
+                parameters={},
+                preferred_tools=[],
+                reasoning="Vector routing unavailable"
+            )
+
     def _analyze_with_patterns(self, request: str) -> RoutingDecision:
         """Analyze request using regex patterns"""
         request_lower = request.lower()
@@ -292,7 +324,7 @@ class ToolRouter:
             elif any(word in request.lower() for word in ["screenshot", "capture"]):
                 parameters["action"] = "screenshot"
         
-        elif task_type == TaskType.WEB_SCAPING:
+        elif task_type == TaskType.WEB_SCRAPING:
             # Extract URLs and scraping details
             url_pattern = r'https?://[^\s"\'<>]+'
             urls = re.findall(url_pattern, request)

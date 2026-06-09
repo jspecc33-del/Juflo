@@ -28,6 +28,7 @@ from .models import Task, TaskType, TaskResult
 from .router import ToolRouter
 from .memory import MemoryManager
 from .skill_layer import SkillLayer
+from .jj_tracker import TaskTrajectoryTracker
 
 
 class SuperAgentOrchestrator:
@@ -79,7 +80,8 @@ class SuperAgentOrchestrator:
         self.router = ToolRouter(self.ai_client)
         self.memory_manager = MemoryManager(self.mcp_clients["memory"])
         self.skill_layer = SkillLayer(config)
-        
+        self.jj_tracker = TaskTrajectoryTracker()
+
         # Task execution state
         self.running_tasks: Dict[str, asyncio.Task] = {}
         self.task_queue = asyncio.Queue()
@@ -136,9 +138,17 @@ class SuperAgentOrchestrator:
             )
     
     async def execute_task(self, task: Task) -> TaskResult:
-        """Execute a single task"""
+        """Execute a single task with trajectory tracking."""
+        traj_id = await self.jj_tracker.start(task.description)
+        result = await self._execute_task_impl(task)
+        await self.jj_tracker.record(traj_id)
+        await self.jj_tracker.finish(traj_id, result.success, result.error or 'ok')
+        return result
+
+    async def _execute_task_impl(self, task: Task) -> TaskResult:
+        """Core task execution logic."""
         start_time = asyncio.get_event_loop().time()
-        
+
         try:
             self.logger.info(f"Executing task {task.id}: {task.description}")
             

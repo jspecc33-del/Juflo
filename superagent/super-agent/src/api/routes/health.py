@@ -185,11 +185,14 @@ async def get_metrics(
         # Get routing statistics
         routing_stats = orchestrator.router.get_routing_statistics()
         
+        jj_stats = orchestrator.jj_tracker.get_stats()
+
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "memory": memory_stats,
             "routing": routing_stats,
-            "uptime": "0s",  # Would track actual uptime in production
+            "trajectories": jj_stats,
+            "uptime": "0s",
             "version": "1.0.0"
         }
     
