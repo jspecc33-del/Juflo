@@ -29,6 +29,11 @@ export class MCPMetrics {
   private startupTimeMs = 0;
   private readonly responseTimeBuf: number[] = [];
   private readonly bufferSize: number;
+  // Sorted view is recomputed lazily: sorting 1000 samples costs ~200µs,
+  // so it must not run on every snapshot when no new data arrived.
+  private sortedCache: number[] = [];
+  private sortedDirty = true;
+  private bufSum = 0;
 
   constructor(bufferSize = 1000) {
     this.bufferSize = bufferSize;
@@ -37,9 +42,11 @@ export class MCPMetrics {
   recordRequest(latencyMs: number): void {
     this.requestCount++;
     this.responseTimeBuf.push(latencyMs);
+    this.bufSum += latencyMs;
     if (this.responseTimeBuf.length > this.bufferSize) {
-      this.responseTimeBuf.shift();
+      this.bufSum -= this.responseTimeBuf.shift() as number;
     }
+    this.sortedDirty = true;
   }
 
   recordError(): void {
@@ -85,6 +92,9 @@ export class MCPMetrics {
     this.connectionPoolHits = 0;
     this.connectionPoolMisses = 0;
     this.responseTimeBuf.length = 0;
+    this.sortedCache = [];
+    this.sortedDirty = true;
+    this.bufSum = 0;
   }
 
   private computeHealth(errorRate: number, poolHitRate: number, p95: number): HealthStatus {
@@ -95,13 +105,16 @@ export class MCPMetrics {
 
   private average(arr: number[]): number {
     if (arr.length === 0) return 0;
-    return arr.reduce((s, v) => s + v, 0) / arr.length;
+    return this.bufSum / arr.length;
   }
 
   private percentile(arr: number[], pct: number): number {
     if (arr.length === 0) return 0;
-    const sorted = [...arr].sort((a, b) => a - b);
-    const idx = Math.ceil((pct / 100) * sorted.length) - 1;
-    return sorted[Math.max(0, idx)];
+    if (this.sortedDirty) {
+      this.sortedCache = [...arr].sort((a, b) => a - b);
+      this.sortedDirty = false;
+    }
+    const idx = Math.ceil((pct / 100) * this.sortedCache.length) - 1;
+    return this.sortedCache[Math.max(0, idx)];
   }
 }
