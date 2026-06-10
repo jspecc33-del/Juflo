@@ -1,0 +1,126 @@
+# Super-Agent Configuration
+
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  debug: true
+  reload: true
+
+# Authentication
+auth:
+  secret_key: "your-secret-key-change-in-production"
+  algorithm: "HS256"
+  access_token_expire_minutes: 30
+
+# MCP Servers Configuration
+mcp_servers:
+  filesystem:
+    base_url: "http://localhost:3000"
+    timeout: 30
+    
+  playwright:
+    base_url: "http://localhost:3001"
+    timeout: 60
+    headless: true
+    browser: "chromium"
+    
+  puppeteer:
+    base_url: "http://localhost:3006"
+    timeout: 60
+    headless: true
+    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    
+  memory:
+    base_url: "http://localhost:3002"
+    timeout: 30
+    
+  postman:
+    base_url: "http://localhost:3003"
+    api_key: "your-postman-api-key"
+    timeout: 60
+    
+  snyk:
+    base_url: "http://localhost:3004"
+    api_token: "your-snyk-token"
+    timeout: 120
+    
+  terraform:
+    base_url: "http://localhost:3005"
+    workspace_path: "./terraform_workspace"
+    timeout: 300
+
+# External Integrations
+integrations:
+  anthropic:
+    api_key: "your-anthropic-api-key"
+    model: "claude-3-sonnet-20241022"
+    max_tokens: 1000
+    
+  scraperapi:
+    api_key: "your-scraperapi-key"
+    base_url: "http://api.scraperapi.com"
+    timeout: 60
+    render_js: false
+    premium: false
+    country_code: "us"
+    device_type: "desktop"
+    
+  apify:
+    api_token: "your-apify-token"
+    base_url: "api.apify.com"
+    timeout: 3600
+
+# Memory Configuration
+memory:
+  default_ttl: 86400  # 24 hours
+  cleanup_interval: 3600  # 1 hour
+  max_storage_size: "1GB"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/super-agent.log"
+  max_file_size: "10MB"
+  backup_count: 5
+
+# Task Processing
+tasks:
+  max_concurrent: 10
+  default_timeout: 300
+  retry_attempts: 3
+  retry_delay: 5
+
+# Rate Limiting
+rate_limiting:
+  enabled: true
+  requests_per_minute: 60
+  requests_per_hour: 1000
+  requests_per_day: 10000
+
+# Security
+security:
+  cors_origins: ["*"]  # Configure appropriately for production
+  cors_methods: ["*"]
+  cors_headers: ["*"]
+  max_request_size: "10MB"
+  enable_security_headers: true
+
+# Monitoring
+monitoring:
+  enabled: true
+  metrics_interval: 60  # seconds
+  health_check_interval: 30  # seconds
+  alert_thresholds:
+    error_rate: 0.05  # 5%
+    response_time: 5.0  # seconds
+    memory_usage: 0.8  # 80%
+
+# Development
+development:
+  auto_reload: true
+  debug_sql: false
+  mock_external_services: false
+  enable_swagger: true
+  enable_redoc: true

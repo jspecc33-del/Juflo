@@ -674,9 +674,7 @@ describe('Config Commands', () => {
 
       const result = await initCmd!.action!(ctx);
 
-      // #1425: config init is not yet implemented
-      expect(result.success).toBe(false);
-      expect(result.exitCode).toBe(1);
+      expect(result.success).toBe(true);
     });
 
     it('should initialize with V3 mode', async () => {
@@ -685,7 +683,7 @@ describe('Config Commands', () => {
       ctx.flags = { v3: true, _: [] };
       const result = await initCmd!.action!(ctx);
 
-      // #1425: config init is not yet implemented
+      // Config already exists from previous test and --force was not passed
       expect(result.success).toBe(false);
       expect(result.exitCode).toBe(1);
     });
@@ -721,9 +719,7 @@ describe('Config Commands', () => {
       ctx.flags = { key: 'swarm.maxAgents', value: '20', _: [] };
       const result = await setCmd!.action!(ctx);
 
-      // #1425: config set is not yet implemented
-      expect(result.success).toBe(false);
-      expect(result.exitCode).toBe(1);
+      expect(result.success).toBe(true);
     });
 
     it('should fail without key and value', async () => {
@@ -755,9 +751,7 @@ describe('Config Commands', () => {
       ctx.flags = { force: true, _: [] };
       const result = await resetCmd!.action!(ctx);
 
-      // #1425: config reset is not yet implemented
-      expect(result.success).toBe(false);
-      expect(result.exitCode).toBe(1);
+      expect(result.success).toBe(true);
     });
   });
 
@@ -768,9 +762,7 @@ describe('Config Commands', () => {
 
       const result = await exportCmd!.action!(ctx);
 
-      // #1425: config export is not yet implemented
-      expect(result.success).toBe(false);
-      expect(result.exitCode).toBe(1);
+      expect(result.success).toBe(true);
     });
   });
 

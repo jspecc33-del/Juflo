@@ -11,14 +11,18 @@ import { unlinkSync, existsSync } from 'node:fs';
 
 describe('DatabaseProvider', () => {
   const testDbPath = './test-database-provider.db';
+  // The RVF backend rewrites .db paths to .rvf, so clean up both
+  const testDbPaths = [testDbPath, testDbPath.replace(/\.db$/, '.rvf')];
 
   afterEach(() => {
     // Cleanup test database
-    if (existsSync(testDbPath)) {
-      try {
-        unlinkSync(testDbPath);
-      } catch (error) {
-        // Ignore cleanup errors
+    for (const dbPath of testDbPaths) {
+      if (existsSync(dbPath)) {
+        try {
+          unlinkSync(dbPath);
+        } catch (error) {
+          // Ignore cleanup errors
+        }
       }
     }
   });

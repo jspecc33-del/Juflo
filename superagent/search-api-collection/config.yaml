@@ -1,0 +1,81 @@
+# Search API Collection Configuration
+# Copy this file and fill in your actual API keys
+
+# Search strategy to use
+# Options: primary, fallback, round_robin, parallel, best_result
+strategy: "fallback"
+
+# Primary API to use (for strategies that need it)
+primary_api: "tavily"
+
+# API configurations
+apis:
+  # Tavily AI Search API
+  # Get API key from: https://tavily.com/
+  tavily:
+    api_key: "YOUR_TAVILY_API_KEY"
+    config:
+      search_depth: "basic"  # "basic" or "advanced"
+      include_answer: true
+      include_raw_content: false
+      max_results: 10
+      include_domains: []
+      exclude_domains: []
+
+  # Brave Search API
+  # Get API key from: https://brave.com/search/api/
+  brave:
+    api_key: "YOUR_BRAVE_API_KEY"
+    config:
+      country: "US"
+      search_lang: "en"
+      ui_lang: "en"
+      safesearch: "moderate"  # "strict", "moderate", "off"
+      text_decorations: false
+      spellcheck: 1
+
+  # SerpAPI (Google Search API)
+  # Get API key from: https://serpapi.com/
+  serpapi:
+    api_key: "YOUR_SERPAPI_KEY"
+    config:
+      engine: "google"
+      google_domain: "google.com"
+      gl: "us"  # Country code
+      hl: "en"  # Language code
+      safe: "active"  # "active", "off"
+      filter: "1"
+
+  # ScraperAPI (Web scraping service)
+  # Get API key from: https://www.scraperapi.com/
+  scraperapi:
+    api_key: "YOUR_SCRAPERAPI_KEY"
+    config:
+      render_js: false
+      premium: false
+      country_code: "us"
+      device_type: "desktop"  # "desktop", "mobile", "tablet"
+      keep_headers: false
+
+# Global settings
+settings:
+  # Default number of results
+  default_num_results: 10
+  
+  # Request timeout in seconds
+  timeout: 30
+  
+  # Maximum number of retries for failed requests
+  max_retries: 3
+  
+  # Rate limiting settings
+  rate_limiting:
+    enabled: true
+    requests_per_second: 5
+    burst_size: 10
+  
+  # Caching settings
+  caching:
+    enabled: false
+    ttl: 3600  # Cache time-to-live in seconds
+    max_size: 1000  # Maximum number of cached results
