@@ -11,6 +11,10 @@
   "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "../shared" },
-    { "path": "../swarm" }
+    { "path": "../swarm" },
+    { "path": "../embeddings" },
+    { "path": "../guidance" },
+    { "path": "../aidefence" },
+    { "path": "../mcp" }
   ]
 }
