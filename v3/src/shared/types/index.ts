@@ -344,6 +344,57 @@ export interface AgentDBOptions {
 }
 
 // ============================================================================
+// Hybrid Search Types
+// ============================================================================
+
+export type MetadataFilterValue =
+  | string
+  | number
+  | boolean
+  | { $gte?: number; $lte?: number; $gt?: number; $lt?: number }
+  | { $ne: unknown }
+  | { $in: unknown[] }
+  | { $contains: string };
+
+export type MetadataFilters = Record<string, MetadataFilterValue>;
+
+export interface HybridSearchWeights {
+  vectorSimilarity: number;
+  metadataScore: number;
+}
+
+export interface HybridSearchOptions {
+  k?: number;
+  filters?: MetadataFilters;
+  weights?: HybridSearchWeights;
+  agentId?: string;
+  type?: MemoryType;
+  timeRange?: { start: number; end: number };
+}
+
+export interface HybridSearchResult extends MemorySearchResult {
+  vectorScore: number;
+  metadataScore: number;
+  hybridScore: number;
+}
+
+// ============================================================================
+// Sharding Types
+// ============================================================================
+
+export interface ShardConfig {
+  id: string;
+  backend: MemoryBackend;
+  domains?: string[];
+}
+
+export interface ShardedBackendOptions {
+  shards: ShardConfig[];
+  defaultShardId?: string;
+  shardKeyExtractor?: (memory: Memory) => string;
+}
+
+// ============================================================================
 // Event Types
 // ============================================================================
 

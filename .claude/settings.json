@@ -284,6 +284,41 @@
     "source": ".claude/commands",
     "enabled": true
   },
+  "workers": {
+    "enabled": true,
+    "parallel": true,
+    "memoryDepositEnabled": true,
+    "agentMappings": {
+      "ultralearn": { "primary": ["researcher", "coder"], "fallback": ["planner"], "pipeline": ["discovery", "patterns", "vectorization", "summary"] },
+      "optimize": { "primary": ["performance-analyzer", "coder"], "fallback": ["researcher"], "pipeline": ["static-analysis", "performance", "patterns"] },
+      "audit": { "primary": ["security-analyst", "tester"], "fallback": ["reviewer"], "pipeline": ["security", "secrets", "vulnerability-scan"] },
+      "benchmark": { "primary": ["performance-analyzer"], "fallback": ["coder", "tester"], "pipeline": ["performance", "metrics", "report"] },
+      "testgaps": { "primary": ["tester"], "fallback": ["coder"], "pipeline": ["discovery", "coverage", "gaps"] },
+      "document": { "primary": ["documenter", "researcher"], "fallback": ["coder"], "pipeline": ["api-discovery", "patterns", "indexing"] },
+      "deepdive": { "primary": ["researcher", "security-analyst"], "fallback": ["coder"], "pipeline": ["call-graph", "deps", "trace"] },
+      "refactor": { "primary": ["coder", "reviewer"], "fallback": ["researcher"], "pipeline": ["complexity", "smells", "patterns"] }
+    },
+    "tokenEfficiency": {
+      "reasoningBankRetrieval": -0.32,
+      "agentBoosterEdits": -0.15,
+      "cacheHitRate": 0.95,
+      "cacheSavings": -0.10,
+      "optimalBatchSavings": -0.20
+    },
+    "benchmarkThresholds": {
+      "researcher": { "p95LatencyMs": 500, "memoryMb": 256 },
+      "coder": { "p95LatencyMs": 300, "qualityScore": 0.85 },
+      "security-analyst": { "scanCoverage": 0.95, "p95LatencyMs": 1000 },
+      "performance-analyzer": { "p95LatencyMs": 300, "qualityScore": 0.85 },
+      "mcp": {
+        "toolLookupMs": 5,
+        "connectionPoolHitRate": 0.9,
+        "startupMs": 400,
+        "p95ResponseMs": 100,
+        "errorRate": 0.05
+      }
+    }
+  },
   "statusLine": {
     "type": "command",
     "command": "node \"$CLAUDE_PROJECT_DIR/.claude/helpers/statusline.cjs\""

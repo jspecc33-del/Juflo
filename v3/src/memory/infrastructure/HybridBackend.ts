@@ -9,7 +9,11 @@ import type {
   Memory,
   MemoryBackend,
   MemoryQuery,
-  MemorySearchResult
+  MemorySearchResult,
+  MetadataFilters,
+  MetadataFilterValue,
+  HybridSearchOptions,
+  HybridSearchResult,
 } from '../../shared/types';
 import { SQLiteBackend } from './SQLiteBackend';
 import { AgentDBBackend } from './AgentDBBackend';
@@ -160,6 +164,65 @@ export class HybridBackend implements MemoryBackend {
   }
 
   /**
+   * Advanced hybrid search: vector similarity + operator-based metadata filters + weighted scoring.
+   *
+   * Filters support: $gte, $lte, $gt, $lt, $ne, $in, $contains, or exact primitives.
+   * Weights default to 70% vector / 30% metadata when filters are provided, else 100% vector.
+   */
+  async hybridSearchAdvanced(
+    embedding: number[],
+    options: HybridSearchOptions = {}
+  ): Promise<HybridSearchResult[]> {
+    const k = options.k ?? 10;
+    const filters = options.filters ?? {};
+    const hasFilters = Object.keys(filters).length > 0;
+    const weights = options.weights ?? {
+      vectorSimilarity: hasFilters ? 0.7 : 1.0,
+      metadataScore: hasFilters ? 0.3 : 0.0,
+    };
+
+    // Fetch a larger candidate set so post-filter still yields k results
+    const candidates = await this.agentDbBackend.vectorSearch(embedding, k * 3);
+
+    // Apply structural filters (agentId, type, timeRange)
+    let filtered: MemorySearchResult[] = candidates;
+    if (options.agentId) {
+      filtered = filtered.filter(m => m.agentId === options.agentId);
+    }
+    if (options.type) {
+      filtered = filtered.filter(m => m.type === options.type);
+    }
+    if (options.timeRange) {
+      filtered = filtered.filter(
+        m => m.timestamp >= options.timeRange!.start && m.timestamp <= options.timeRange!.end
+      );
+    }
+
+    // Score and filter by metadata operators
+    const scored: HybridSearchResult[] = filtered.map(m => {
+      const vectorScore = m.similarity ?? 0;
+      const metaScore = hasFilters ? this.computeMetadataScore(m, filters) : 0;
+
+      // Discard if any filter condition has zero contribution (strict mode when exact match expected)
+      const passesFilter = !hasFilters || this.passesAllFilters(m, filters);
+
+      return {
+        ...m,
+        vectorScore,
+        metadataScore: metaScore,
+        hybridScore: passesFilter
+          ? vectorScore * weights.vectorSimilarity + metaScore * weights.metadataScore
+          : -1,
+      };
+    });
+
+    return scored
+      .filter(r => r.hybridScore >= 0)
+      .sort((a, b) => b.hybridScore - a.hybridScore)
+      .slice(0, k);
+  }
+
+  /**
    * Get backend statistics
    */
   getStats(): { sqlite: number; agentdb: number } {
@@ -167,6 +230,51 @@ export class HybridBackend implements MemoryBackend {
       sqlite: this.sqliteBackend.getCount(),
       agentdb: 0 // AgentDB doesn't expose count directly
     };
+  }
+
+  private passesAllFilters(memory: Memory, filters: MetadataFilters): boolean {
+    if (!memory.metadata) return false;
+    return Object.entries(filters).every(([key, filter]) =>
+      this.evaluateFilter(memory.metadata![key], filter)
+    );
+  }
+
+  private computeMetadataScore(memory: Memory, filters: MetadataFilters): number {
+    if (!memory.metadata) return 0;
+    const keys = Object.keys(filters);
+    if (keys.length === 0) return 0;
+    const matched = keys.filter(k => this.evaluateFilter(memory.metadata![k], filters[k])).length;
+    return matched / keys.length;
+  }
+
+  private evaluateFilter(value: unknown, filter: MetadataFilterValue): boolean {
+    if (typeof filter !== 'object' || filter === null || Array.isArray(filter)) {
+      return value === filter;
+    }
+
+    const f = filter as Record<string, unknown>;
+    if ('$gte' in f && typeof value === 'number') {
+      if (value < (f.$gte as number)) return false;
+    }
+    if ('$lte' in f && typeof value === 'number') {
+      if (value > (f.$lte as number)) return false;
+    }
+    if ('$gt' in f && typeof value === 'number') {
+      if (value <= (f.$gt as number)) return false;
+    }
+    if ('$lt' in f && typeof value === 'number') {
+      if (value >= (f.$lt as number)) return false;
+    }
+    if ('$ne' in f) {
+      if (value === f.$ne) return false;
+    }
+    if ('$in' in f && Array.isArray(f.$in)) {
+      if (!(f.$in as unknown[]).includes(value)) return false;
+    }
+    if ('$contains' in f && typeof value === 'string') {
+      if (!value.includes(f.$contains as string)) return false;
+    }
+    return true;
   }
 }
 
