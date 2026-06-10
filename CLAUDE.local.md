@@ -1,5 +1,10 @@
 # Local Development Configuration
 
+## Repository Visibility
+
+- ALWAYS create new GitHub repositories as private (`private: true` in `create_repository`) unless the user explicitly asks for a public repo.
+- Existing repos (`jspecc33-del/ruflo`, `jspecc33-del/downloads`) should be set to private — the connected GitHub MCP server has no repo-visibility/admin tool, so this must be done manually via GitHub: Settings → General → Danger Zone → Change visibility (or `gh repo edit <owner>/<repo> --visibility private` from a machine with `gh` + admin access).
+
 ## Environment Variables
 
 ```bash

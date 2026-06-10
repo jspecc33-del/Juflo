@@ -222,7 +222,7 @@ export class PluginDiscoveryService {
         { id: 'ai-ml', name: 'AI/ML', description: 'AI and machine learning plugins', pluginCount: 1 },
         { id: 'security', name: 'Security', description: 'Security and compliance plugins', pluginCount: 1 },
         { id: 'devops', name: 'DevOps', description: 'CI/CD and deployment plugins', pluginCount: 1 },
-        { id: 'integrations', name: 'Integrations', description: 'Third-party integrations', pluginCount: 2 },
+        { id: 'integrations', name: 'Integrations', description: 'Third-party integrations', pluginCount: 3 },
         { id: 'agents', name: 'Agents', description: 'Custom agent types', pluginCount: 1 },
       ],
       authors: [
@@ -240,8 +240,8 @@ export class PluginDiscoveryService {
       totalAuthors: 1,
       featured: ['@claude-flow/plugin-agentic-qe', '@claude-flow/plugin-prime-radiant', '@claude-flow/security', '@claude-flow/claims', '@claude-flow/teammate-plugin'],
       trending: ['@claude-flow/plugin-agentic-qe', '@claude-flow/plugin-prime-radiant'],
-      newest: ['@claude-flow/plugin-agentic-qe', '@claude-flow/plugin-prime-radiant'],
-      official: ['@claude-flow/plugin-agentic-qe', '@claude-flow/plugin-prime-radiant', '@claude-flow/security', '@claude-flow/claims'],
+      newest: ['@claude-flow/plugin-github', '@claude-flow/plugin-agentic-qe', '@claude-flow/plugin-prime-radiant'],
+      official: ['@claude-flow/plugin-agentic-qe', '@claude-flow/plugin-prime-radiant', '@claude-flow/security', '@claude-flow/claims', '@claude-flow/plugin-github'],
       compatibilityMatrix: [
         { pluginId: '@claude-flow/neural', pluginVersion: '3.0.0', claudeFlowVersions: ['3.x'], tested: true },
         { pluginId: '@claude-flow/security', pluginVersion: '3.0.0', claudeFlowVersions: ['3.x'], tested: true },
@@ -1025,6 +1025,46 @@ export class PluginDiscoveryService {
           issues: [],
         },
       },
+      // GitHub Bridge - GitHub API integration for repo, PR, issue, and review automation
+      {
+        id: '@claude-flow/plugin-github',
+        name: '@claude-flow/plugin-github',
+        displayName: 'GitHub Bridge',
+        description: 'GitHub API integration providing repository analysis, pull request and issue management, automated code review, and CI/CD workflow coordination for the github-modes, pr-manager, issue-tracker, and release-manager agents.',
+        version: '0.1.0',
+        cid: 'bafybeigithubbridgeplugin2026',
+        size: 245000,
+        checksum: 'sha256:githubbridge2026xyz',
+        author: officialAuthor,
+        license: 'MIT',
+        categories: ['integrations', 'devops'],
+        tags: ['github', 'git', 'pull-requests', 'issues', 'code-review', 'ci-cd', 'workflows'],
+        keywords: ['github', 'git', 'repository', 'pull-request'],
+        downloads: 0,
+        rating: 0,
+        ratingCount: 0,
+        lastUpdated: baseTime,
+        createdAt: '2026-02-27T00:00:00Z',
+        minClaudeFlowVersion: '3.0.0',
+        dependencies: [
+          { name: '@claude-flow/core', version: '^3.0.0' },
+          { name: '@octokit/rest', version: '^20.0.0' },
+        ],
+        type: 'integration',
+        hooks: ['github:repo-analyze', 'github:pr-sync', 'github:issue-sync', 'github:review'],
+        commands: ['github repo-analyze', 'github pr-sync', 'github issue-sync', 'github review', 'github release'],
+        permissions: ['network', 'filesystem', 'memory'],
+        exports: ['GitHubBridge', 'RepoAnalyzer', 'PRManager', 'IssueTracker', 'CodeReviewer'],
+        verified: true,
+        trustLevel: 'official',
+        securityAudit: {
+          auditor: 'claude-flow-security-team',
+          auditDate: '2026-02-27T00:00:00Z',
+          auditVersion: '0.1.0',
+          passed: true,
+          issues: [],
+        },
+      },
       // Teammate Plugin - Claude Code v2.1.19+ integration
       {
         id: '@claude-flow/teammate-plugin',
@@ -1100,6 +1140,8 @@ export class PluginDiscoveryService {
       '@claude-flow/plugin-hyperbolic-reasoning',
       // Gas Town Bridge
       '@claude-flow/plugin-gastown-bridge',
+      // GitHub Bridge
+      '@claude-flow/plugin-github',
     ];
 
     // Fetch stats in parallel
