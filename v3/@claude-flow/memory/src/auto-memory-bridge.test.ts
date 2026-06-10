@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fsSync from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import {
   AutoMemoryBridge,
@@ -104,15 +105,26 @@ describe('resolveAutoMemoryDir', () => {
 });
 
 describe('findGitRoot', () => {
+  let repoDir: string;
+
+  beforeEach(() => {
+    repoDir = fsSync.mkdtempSync(path.join(os.tmpdir(), 'git-root-test-'));
+    fsSync.mkdirSync(path.join(repoDir, '.git'));
+    fsSync.mkdirSync(path.join(repoDir, 'packages', 'memory'), { recursive: true });
+  });
+
+  afterEach(() => {
+    fsSync.rmSync(repoDir, { recursive: true, force: true });
+  });
+
   it('should find git root for a directory inside a repo', () => {
-    // We know /workspaces/claude-flow is a git repo
-    const root = findGitRoot('/workspaces/claude-flow/v3/@claude-flow/memory');
-    expect(root).toBe('/workspaces/claude-flow');
+    const root = findGitRoot(path.join(repoDir, 'packages', 'memory'));
+    expect(root).toBe(repoDir);
   });
 
   it('should return the directory itself if it is the git root', () => {
-    const root = findGitRoot('/workspaces/claude-flow');
-    expect(root).toBe('/workspaces/claude-flow');
+    const root = findGitRoot(repoDir);
+    expect(root).toBe(repoDir);
   });
 
   it('should return null for root filesystem', () => {
@@ -732,7 +744,8 @@ Already in DB
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should report errors for individual insight write failures', async () => {
+    // Root bypasses file permission checks, so the read-only file cannot force a write error
+    it.skipIf(process.getuid?.() === 0)('should report errors for individual insight write failures', async () => {
       // Create a read-only file to force a write error
       const topicPath = bridge.getTopicPath('debugging');
       fsSync.writeFileSync(topicPath, '# Debugging\n\n- Existing\n', 'utf-8');

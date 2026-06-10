@@ -522,12 +522,19 @@ describe('Start Command', () => {
     });
 
     it('should start in daemon mode', async () => {
+      const setIntervalSpy = vi.spyOn(global, 'setInterval');
       ctx.flags = { daemon: true, _: [] };
 
       const result = await startCommand.action!(ctx);
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveProperty('daemon', true);
+
+      // Clear the daemon keepAlive timer so it cannot fire process.exit(0) during later tests
+      for (const call of setIntervalSpy.mock.results) {
+        clearInterval(call.value as ReturnType<typeof setInterval>);
+      }
+      setIntervalSpy.mockRestore();
     });
 
     it('should skip MCP server when requested', async () => {
