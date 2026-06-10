@@ -16,6 +16,12 @@ import { createInterface } from 'readline';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
+// stdout is reserved for the JSON protocol — route library chatter
+// (e.g. AgentDB init banners) to stderr so readers never parse it.
+console.log = (...args) => process.stderr.write(args.join(' ') + '\n');
+console.info = console.log;
+console.warn = console.log;
+
 const MODULES = process.env.AGENTDB_MODULES || '/home/user/ruflo/v3/node_modules';
 
 // ---------------------------------------------------------------------------
@@ -60,6 +66,47 @@ function routeByKeywords(query, k) {
   }
   scores.sort((a, b) => b.score - a.score);
   return scores.slice(0, k);
+}
+
+// ---------------------------------------------------------------------------
+// In-process document store — fallback ranking when AgentDB skill retrieval
+// returns nothing (offline mock embeddings produce no vector matches)
+// ---------------------------------------------------------------------------
+const localDocs = [];
+
+// Light suffix stripping so variants like scrape/scraping/products match
+function stem(t) {
+  if (t.length > 5 && t.endsWith('ing')) t = t.slice(0, -3);
+  else if (t.length > 4 && t.endsWith('ed')) t = t.slice(0, -2);
+  else if (t.length > 3 && t.endsWith('s')) t = t.slice(0, -1);
+  if (t.length > 4 && t.endsWith('e')) t = t.slice(0, -1);
+  return t;
+}
+
+function tokenize(text) {
+  return new Set(
+    text.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(t => t.length > 2)
+        .map(stem)
+  );
+}
+
+function searchLocalDocs(query, k) {
+  const queryTokens = tokenize(query);
+  if (queryTokens.size === 0) return [];
+
+  const scored = [];
+  for (const doc of localDocs) {
+    let matched = 0;
+    for (const t of queryTokens) { if (doc.tokens.has(t)) matched++; }
+    if (matched === 0) continue;
+    const score = matched / Math.sqrt(queryTokens.size * doc.tokens.size);
+    scored.push({ text: doc.text, score });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, k);
 }
 
 // ---------------------------------------------------------------------------
@@ -113,6 +160,8 @@ async function handleRequest(req) {
     }
 
     case 'store': {
+      // Always index locally so search works even when vector retrieval doesn't
+      localDocs.push({ text: req.text || '', tokens: tokenize(req.text || '') });
       const db = await getAgentDB();
       if (!db) return { ok: true, fallback: true };
       try {
@@ -130,24 +179,29 @@ async function handleRequest(req) {
     }
 
     case 'search': {
+      const k = req.k || 5;
       const db = await getAgentDB();
-      if (!db) return { results: [] };
-      try {
-        const skills = await db.skills.retrieveSkills({
-          task:           req.query,
-          k:              req.k || 5,
-          minSuccessRate: 0
-        });
-        return {
-          results: skills.map(s => ({
-            text:  s.description || s.code || s.name || '',
-            score: s.successRate || 0.5
-          }))
-        };
-      } catch (e) {
-        process.stderr.write(`[bridge] search failed: ${e.message}\n`);
-        return { results: [] };
+      if (db) {
+        try {
+          const skills = await db.skills.retrieveSkills({
+            task:           req.query,
+            k,
+            minSuccessRate: 0
+          });
+          if (skills.length > 0) {
+            return {
+              results: skills.map(s => ({
+                text:  s.description || s.code || s.name || '',
+                score: s.successRate || 0.5
+              }))
+            };
+          }
+        } catch (e) {
+          process.stderr.write(`[bridge] search failed: ${e.message}\n`);
+        }
       }
+      // Vector retrieval unavailable or empty — rank locally stored docs
+      return { results: searchLocalDocs(req.query || '', k) };
     }
 
     case 'traj_start': {
@@ -210,7 +264,7 @@ process.stderr.write('[bridge] AgentDB bridge starting\n');
 
 const rl = createInterface({ input: process.stdin, terminal: false });
 
-rl.on('line', async (line) => {
+async function processLine(line) {
   const trimmed = line.trim();
   if (!trimmed) return;
   let req;
@@ -226,6 +280,16 @@ rl.on('line', async (line) => {
   } catch (e) {
     process.stdout.write(JSON.stringify({ error: e.message }) + '\n');
   }
+}
+
+// Serialize requests so responses always come back in request order,
+// and drain in-flight work before exiting on stdin EOF.
+let pending = Promise.resolve();
+
+rl.on('line', (line) => {
+  pending = pending.then(() => processLine(line));
 });
 
-rl.on('close', () => process.exit(0));
+rl.on('close', () => {
+  pending.then(() => process.exit(0));
+});
