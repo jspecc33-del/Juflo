@@ -146,6 +146,10 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
   // O(1) reverse lookup for numeric ID -> string ID (fixes O(n) linear scan)
   private numericToStringIdMap: Map<number, string> = new Map();
 
+  // Collision-free string ID <-> numeric ID mapping (sequential assignment)
+  private stringToNumericIdMap: Map<string, number> = new Map();
+  private nextNumericId: number = 1;
+
   // Performance tracking
   private stats = {
     queryCount: 0,
@@ -185,6 +189,9 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
         forceWasm: this.config.forceWasm,
         vectorBackend: this.config.vectorBackend,
         vectorDimension: this.config.vectorDimension,
+        hnswM: this.config.hnswM,
+        hnswEfConstruction: this.config.hnswEfConstruction,
+        hnswEfSearch: this.config.hnswEfSearch,
       });
 
       // Suppress agentdb's noisy console.log during init
@@ -247,7 +254,7 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
     this.entries.set(entry.id, entry);
 
     // Register ID mapping for O(1) reverse lookup
-    this.registerIdMapping(entry.id);
+    this.stringIdToNumeric(entry.id);
 
     // Update indexes
     this.updateIndexes(entry);
@@ -410,11 +417,12 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
   }
 
   /**
-   * Bulk insert
+   * Bulk insert (OPTIMIZED: parallel batches, same strategy as AgentDBAdapter)
    */
-  async bulkInsert(entries: MemoryEntry[]): Promise<void> {
-    for (const entry of entries) {
-      await this.store(entry);
+  async bulkInsert(entries: MemoryEntry[], options?: { batchSize?: number }): Promise<void> {
+    const batchSize = options?.batchSize ?? 100;
+    for (let i = 0; i < entries.length; i += batchSize) {
+      await Promise.all(entries.slice(i, i + batchSize).map((e) => this.store(e)));
     }
   }
 
@@ -936,15 +944,19 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
   }
 
   /**
-   * Convert string ID to numeric for HNSW
+   * Convert string ID to a collision-free numeric ID for HNSW.
+   * Assigns a sequential ID on first use and caches both directions —
+   * hashing risks collisions at scale, which would silently conflate
+   * distinct entries within the vector index.
    */
   private stringIdToNumeric(id: string): number {
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-      hash = (hash << 5) - hash + id.charCodeAt(i);
-      hash |= 0;
+    let numericId = this.stringToNumericIdMap.get(id);
+    if (numericId === undefined) {
+      numericId = this.nextNumericId++;
+      this.stringToNumericIdMap.set(id, numericId);
+      this.numericToStringIdMap.set(numericId, id);
     }
-    return Math.abs(hash);
+    return numericId;
   }
 
   /**
@@ -962,21 +974,15 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
   }
 
   /**
-   * Register string ID in reverse lookup map
-   * Called when storing entries to maintain bidirectional mapping
-   */
-  private registerIdMapping(stringId: string): void {
-    const numericId = this.stringIdToNumeric(stringId);
-    this.numericToStringIdMap.set(numericId, stringId);
-  }
-
-  /**
-   * Unregister string ID from reverse lookup map
+   * Unregister string ID from reverse lookup maps
    * Called when deleting entries
    */
   private unregisterIdMapping(stringId: string): void {
-    const numericId = this.stringIdToNumeric(stringId);
-    this.numericToStringIdMap.delete(numericId);
+    const numericId = this.stringToNumericIdMap.get(stringId);
+    if (numericId !== undefined) {
+      this.numericToStringIdMap.delete(numericId);
+      this.stringToNumericIdMap.delete(stringId);
+    }
   }
 
   /**

@@ -374,32 +374,45 @@ export class HybridBackend extends EventEmitter implements IMemoryBackend {
       throw new Error('SemanticQuery requires either content or embedding');
     }
 
-    const searchResults = await this.agentdb.search(embedding, {
-      k: (query.k || 10) * 2, // Over-fetch to account for post-filtering
-      threshold: query.threshold || this.config.semanticThreshold,
-      filters: query.filters as MemoryQuery | undefined,
-    });
-
-    let entries = searchResults.map((r) => r.entry);
+    const k = query.k || 10;
 
     // Apply tag/namespace/type filters that AgentDB may not enforce
-    if (query.filters) {
-      const f = query.filters as Record<string, unknown>;
-      if (f.tags && Array.isArray(f.tags)) {
-        const requiredTags = f.tags as string[];
-        entries = entries.filter((e) =>
-          requiredTags.every((t) => e.tags.includes(t))
-        );
+    const applyExtraFilters = (results: SearchResult[]): MemoryEntry[] => {
+      let entries = results.map((r) => r.entry);
+      if (query.filters) {
+        const f = query.filters as Record<string, unknown>;
+        if (f.tags && Array.isArray(f.tags)) {
+          const requiredTags = f.tags as string[];
+          entries = entries.filter((e) =>
+            requiredTags.every((t) => e.tags.includes(t))
+          );
+        }
+        if (f.namespace && typeof f.namespace === 'string') {
+          entries = entries.filter((e) => e.namespace === f.namespace);
+        }
+        if (f.type && typeof f.type === 'string' && f.type !== 'semantic') {
+          entries = entries.filter((e) => e.type === f.type);
+        }
       }
-      if (f.namespace && typeof f.namespace === 'string') {
-        entries = entries.filter((e) => e.namespace === f.namespace);
-      }
-      if (f.type && typeof f.type === 'string' && f.type !== 'semantic') {
-        entries = entries.filter((e) => e.type === f.type);
+      return entries;
+    };
+
+    // Over-fetch and escalate when post-filtering shrinks results below k
+    let entries: MemoryEntry[] = [];
+    for (let fetchK = k * 2; ; fetchK *= 4) {
+      const searchResults = await this.agentdb.search(embedding, {
+        k: fetchK,
+        threshold: query.threshold || this.config.semanticThreshold,
+        filters: query.filters as MemoryQuery | undefined,
+      });
+
+      entries = applyExtraFilters(searchResults);
+      if (entries.length >= k || searchResults.length < fetchK || fetchK >= k * 32) {
+        break;
       }
     }
 
-    return entries.slice(0, query.k || 10);
+    return entries.slice(0, k);
   }
 
   /**
