@@ -15,6 +15,7 @@
 
 import { EventEmitter } from 'node:events';
 import type { HookContext, HookEvent } from '../types.js';
+import { LearningPlugin, type LearningMetrics } from './learning-plugin.js';
 
 // Dynamic imports for optional dependencies
 let AgentDBAdapter: any = null;
@@ -140,6 +141,12 @@ const AGENT_PATTERNS: Record<string, RegExp> = {
 };
 
 /**
+ * Fixed agent action space for the Decision Transformer learning plugin.
+ * An agent's position in this list is its RL action index.
+ */
+const AGENT_ACTIONS: readonly string[] = Object.keys(AGENT_PATTERNS);
+
+/**
  * Domain-specific guidance templates
  */
 const DOMAIN_GUIDANCE: Record<string, string[]> = {
@@ -193,6 +200,7 @@ export class ReasoningBank extends EventEmitter {
   private embeddingService: IEmbeddingService;
   private initialized = false;
   private useRealBackend = false;
+  private learningPlugin = new LearningPlugin();
 
   // In-memory caches for fast access
   private shortTermPatterns: Map<string, GuidancePattern> = new Map();
@@ -224,6 +232,7 @@ export class ReasoningBank extends EventEmitter {
     try {
       // Try to load real implementations
       await this.loadDependencies();
+      await this.learningPlugin.initialize(this.config.dbPath);
 
       if (AgentDBAdapter && HNSWIndex) {
         // Initialize real HNSW index
@@ -493,6 +502,22 @@ export class ReasoningBank extends EventEmitter {
 
     const suggestion = this.suggestAgent(task);
 
+    // Consult the Decision Transformer learning plugin for a suggestion
+    // learned from recorded outcomes, overriding the regex-based default
+    // when it has a confident match
+    if (this.learningPlugin.available) {
+      const embedding = await this.embeddingService.embed(task);
+      const domain = this.detectDomains(task)[0] || 'general';
+      const learned = await this.learningPlugin.suggestAction(embedding, domain);
+      const learnedAgent = learned ? AGENT_ACTIONS[learned.action] : undefined;
+
+      if (learned && learnedAgent && learned.confidence > 0.7) {
+        suggestion.agent = learnedAgent;
+        suggestion.confidence = Math.round(learned.confidence * 100);
+        suggestion.reasoning = `Learned from recorded outcomes (Decision Transformer, ${(learned.confidence * 100).toFixed(0)}% match)`;
+      }
+    }
+
     // Get historical performance from patterns
     const taskPatterns = await this.searchPatterns(task, 10);
     const agentPerformance = new Map<string, { success: number; total: number; quality: number }>();
@@ -553,7 +578,31 @@ export class ReasoningBank extends EventEmitter {
     await this.updateInStorage(pattern);
     this.checkPromotion(pattern);
 
+    // Log this outcome as an RL experience tuple for the Decision
+    // Transformer learning plugin (state = pattern embedding, action =
+    // routed agent index, reward = outcome)
+    const agent = (pattern.metadata.agent as string) || 'coder';
+    const action = AGENT_ACTIONS.indexOf(agent);
+    await this.learningPlugin.recordExperience({
+      state: pattern.embedding,
+      action: action >= 0 ? action : AGENT_ACTIONS.indexOf('coder'),
+      reward: success ? 1 : 0,
+      nextState: pattern.embedding,
+      done: true,
+      domain: pattern.domain,
+    });
+
     this.emit('outcome:recorded', { patternId, success });
+  }
+
+  /**
+   * Train the Decision Transformer learning plugin on accumulated
+   * outcome experiences. Returns null if the optional `agentic-flow`
+   * learning plugin is unavailable.
+   */
+  async trainLearningModel(options: { epochs?: number; batchSize?: number } = {}): Promise<LearningMetrics | null> {
+    await this.ensureInitialized();
+    return this.learningPlugin.train(options);
   }
 
   /**

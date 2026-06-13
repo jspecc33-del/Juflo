@@ -27,6 +27,14 @@ export {
   type ReasoningBankMetrics,
 } from './reasoningbank/index.js';
 
+// ReasoningBank Learning Plugin - Decision Transformer (AgentDB)
+export {
+  LearningPlugin,
+  type ExperienceTuple,
+  type LearningMetrics,
+  type ActionSuggestion,
+} from './reasoningbank/learning-plugin.js';
+
 // Guidance Provider - Claude-visible output generation
 export {
   GuidanceProvider,
