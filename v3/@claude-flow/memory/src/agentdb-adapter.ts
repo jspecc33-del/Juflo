@@ -25,6 +25,7 @@ import {
   createDefaultEntry,
   CacheStats,
   HNSWStats,
+  QuantizationConfig,
 } from './types.js';
 import { HNSWIndex } from './hnsw-index.js';
 import { CacheManager } from './cache-manager.js';
@@ -56,6 +57,13 @@ export interface AgentDBAdapterConfig {
 
   /** HNSW efSearch parameter (search-time quality vs speed trade-off) */
   hnswEfSearch: number;
+
+  /**
+   * Vector quantization for memory reduction (opt-in).
+   * binary: 32x smaller, ~2-5% accuracy loss. scalar: 4x smaller, ~1-2% loss.
+   * product: 8-16x smaller, ~3-7% loss. Omit for full precision.
+   */
+  quantization?: QuantizationConfig;
 
   /** Default namespace */
   defaultNamespace: string;
@@ -127,6 +135,7 @@ export class AgentDBAdapter extends EventEmitter implements IMemoryBackend {
       efConstruction: this.config.hnswEfConstruction,
       maxElements: this.config.maxEntries,
       metric: 'cosine',
+      quantization: this.config.quantization,
     });
 
     // Initialize cache

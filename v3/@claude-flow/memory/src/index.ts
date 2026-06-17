@@ -271,6 +271,8 @@ export class UnifiedMemoryService extends EventEmitter implements IMemoryBackend
       cacheTtl: this.config.cacheTtl,
       hnswM: this.config.hnswM,
       hnswEfConstruction: this.config.hnswEfConstruction,
+      hnswEfSearch: this.config.hnswEfSearch,
+      quantization: this.config.quantization,
       defaultNamespace: this.config.defaultNamespace,
       embeddingGenerator: this.config.embeddingGenerator,
       persistenceEnabled: this.config.persistenceEnabled,
