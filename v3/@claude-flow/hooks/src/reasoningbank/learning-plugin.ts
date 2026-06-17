@@ -109,7 +109,7 @@ export class LearningPlugin {
 
     try {
       await this.adapter.insertPattern({
-        id: '',
+        id: `exp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         type: 'experience',
         domain: experience.domain,
         pattern_data: JSON.stringify({

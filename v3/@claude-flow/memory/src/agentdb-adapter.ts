@@ -417,7 +417,8 @@ export class AgentDBAdapter extends EventEmitter implements IMemoryBackend {
     options: SearchOptions
   ): Promise<SearchResult[]> {
     const startTime = performance.now();
-    const ef = options.ef ?? this.config.hnswEfSearch;
+    // ef must be >= k, or HNSWIndex's BinaryMaxHeap caps results below k
+    const ef = Math.max(options.ef ?? this.config.hnswEfSearch, options.k);
 
     // When entry-level filters are present, delegate to searchWithFilters so
     // the over-fetch escalates automatically if the filter is selective
@@ -851,9 +852,15 @@ export class AgentDBAdapter extends EventEmitter implements IMemoryBackend {
       return this.queryWithFilters(query);
     }
 
+    // search() escalates internally via HNSWIndex.searchWithFilters when filters
+    // are set, but that escalation targets the entry-filter predicate only -- it
+    // doesn't know about options.threshold, which is applied afterwards in
+    // search() and can still drop candidates below query.limit. Over-fetch to
+    // compensate when a threshold is set.
+    const k = query.threshold ? query.limit * 2 : query.limit;
+
     const searchResults = await this.search(embedding, {
-      // search() escalates internally via HNSWIndex.searchWithFilters when filters are set
-      k: query.limit,
+      k,
       threshold: query.threshold,
       filters: query,
     });

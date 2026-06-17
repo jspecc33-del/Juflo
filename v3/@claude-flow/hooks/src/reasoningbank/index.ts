@@ -142,9 +142,21 @@ const AGENT_PATTERNS: Record<string, RegExp> = {
 
 /**
  * Fixed agent action space for the Decision Transformer learning plugin.
- * An agent's position in this list is its RL action index.
+ * An agent's position in this list is its RL action index, persisted in
+ * recorded experience tuples -- declared as an explicit literal (not
+ * derived from AGENT_PATTERNS) so the index assignment is stable
+ * regardless of how AGENT_PATTERNS is edited.
  */
-const AGENT_ACTIONS: readonly string[] = Object.keys(AGENT_PATTERNS);
+const AGENT_ACTIONS: readonly string[] = [
+  'security-architect',
+  'test-architect',
+  'performance-engineer',
+  'core-architect',
+  'swarm-specialist',
+  'memory-specialist',
+  'coder',
+  'reviewer',
+];
 
 /**
  * Domain-specific guidance templates
