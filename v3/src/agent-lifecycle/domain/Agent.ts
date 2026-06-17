@@ -1,23 +1,34 @@
 /**
  * Agent Domain Entity
  *
- * Represents an AI agent in the V3 system
+ * Represents an AI agent in the V3 system. Implemented as an aggregate
+ * root: status is an immutable value object, and lifecycle/task
+ * transitions raise domain events.
  */
 
+import { AggregateRoot } from '../../shared/domain';
+import { AgentId } from './value-objects/AgentId';
+import { AgentStatus } from './value-objects/AgentStatus';
+import {
+  AgentActivatedEvent,
+  AgentIdledEvent,
+  AgentTerminatedEvent,
+  AgentTaskStartedEvent,
+  AgentTaskCompletedEvent,
+  AgentTaskFailedEvent
+} from './events/AgentEvents';
 import type {
   Agent as IAgent,
   AgentConfig,
-  AgentStatus,
+  AgentStatus as AgentStatusValue,
   AgentType,
   AgentRole,
   Task,
   TaskResult
 } from '../../shared/types';
 
-export class Agent implements IAgent {
-  public readonly id: string;
+export class Agent extends AggregateRoot<string> implements IAgent {
   public readonly type: AgentType;
-  public status: AgentStatus;
   public capabilities: string[];
   public role?: AgentRole;
   public parent?: string;
@@ -25,10 +36,12 @@ export class Agent implements IAgent {
   public createdAt: number;
   public lastActive: number;
 
+  private _status: AgentStatus;
+
   constructor(config: AgentConfig) {
-    this.id = config.id;
+    super(AgentId.create(config.id).value);
     this.type = config.type;
-    this.status = 'active';
+    this._status = AgentStatus.active();
     this.capabilities = config.capabilities || [];
     this.role = config.role;
     this.parent = config.parent;
@@ -37,11 +50,15 @@ export class Agent implements IAgent {
     this.lastActive = Date.now();
   }
 
+  get status(): AgentStatusValue {
+    return this._status.value;
+  }
+
   /**
    * Execute a task assigned to this agent
    */
   async executeTask(task: Task): Promise<TaskResult> {
-    if (this.status !== 'active' && this.status !== 'idle') {
+    if (!this._status.isAvailable()) {
       return {
         taskId: task.id,
         status: 'failed',
@@ -51,8 +68,9 @@ export class Agent implements IAgent {
     }
 
     const startTime = Date.now();
-    this.status = 'busy';
+    this._status = AgentStatus.busy();
     this.lastActive = startTime;
+    this.applyEvent(new AgentTaskStartedEvent(this.id, task.id));
 
     try {
       // Execute task-specific callback if provided
@@ -64,8 +82,9 @@ export class Agent implements IAgent {
       await this.processTaskExecution(task);
 
       const duration = Date.now() - startTime;
-      this.status = 'active';
+      this._status = AgentStatus.active();
       this.lastActive = Date.now();
+      this.applyEvent(new AgentTaskCompletedEvent(this.id, task.id, duration));
 
       return {
         taskId: task.id,
@@ -76,12 +95,14 @@ export class Agent implements IAgent {
       };
     } catch (error) {
       const duration = Date.now() - startTime;
-      this.status = 'active';
+      this._status = AgentStatus.active();
+      const message = error instanceof Error ? error.message : String(error);
+      this.applyEvent(new AgentTaskFailedEvent(this.id, task.id, message));
 
       return {
         taskId: task.id,
         status: 'failed',
-        error: error instanceof Error ? error.message : String(error),
+        error: message,
         duration,
         agentId: this.id
       };
@@ -134,17 +155,19 @@ export class Agent implements IAgent {
    * Terminate the agent
    */
   terminate(): void {
-    this.status = 'terminated';
+    this._status = AgentStatus.terminated();
     this.lastActive = Date.now();
+    this.applyEvent(new AgentTerminatedEvent(this.id));
   }
 
   /**
    * Mark agent as idle
    */
   setIdle(): void {
-    if (this.status === 'active' || this.status === 'busy') {
-      this.status = 'idle';
+    if (this._status.isActive() || this._status.isBusy()) {
+      this._status = AgentStatus.idle();
       this.lastActive = Date.now();
+      this.applyEvent(new AgentIdledEvent(this.id));
     }
   }
 
@@ -152,9 +175,10 @@ export class Agent implements IAgent {
    * Activate the agent
    */
   activate(): void {
-    if (this.status !== 'terminated') {
-      this.status = 'active';
+    if (!this._status.isTerminated()) {
+      this._status = AgentStatus.active();
       this.lastActive = Date.now();
+      this.applyEvent(new AgentActivatedEvent(this.id));
     }
   }
 
