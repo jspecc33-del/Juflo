@@ -35,6 +35,10 @@
     ".claude/**",
     "!.claude/**/*.db",
     "!.claude/**/*.map",
+    "!.claude/worktrees/**",
+    "!.claude/settings.local.json",
+    "!.claude/settings.json.bak",
+    "!.claude/scheduled_tasks.lock",
     "README.md",
     "LICENSE"
   ],
