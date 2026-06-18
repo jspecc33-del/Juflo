@@ -399,7 +399,10 @@ export class HNSWIndex extends EventEmitter {
     let filtered: Array<{ id: string; distance: number }> = [];
 
     while (true) {
-      const candidates = await this.search(query, fetchSize, ef);
+      // ef must scale with fetchSize, otherwise the BinaryMaxHeap inside
+      // search() stays capped at the original ef and escalation is a no-op
+      const adjustedEf = ef != null ? Math.max(ef, fetchSize) : undefined;
+      const candidates = await this.search(query, fetchSize, adjustedEf);
       filtered = candidates.filter((c) => filter(c.id));
 
       if (filtered.length >= k || fetchSize >= this.nodes.size) {
