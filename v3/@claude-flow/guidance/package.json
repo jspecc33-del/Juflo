@@ -141,7 +141,7 @@
   },
   "dependencies": {
     "@claude-flow/hooks": "^3.0.0-alpha.7",
-    "@claude-flow/memory": "workspace:3.0.0-alpha.21",
+    "@claude-flow/memory": "workspace:^3.0.0-alpha.21",
     "@claude-flow/shared": "^3.0.0-alpha.1"
   },
   "devDependencies": {
