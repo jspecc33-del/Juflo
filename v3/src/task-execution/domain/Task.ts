@@ -15,7 +15,8 @@ import {
   TaskAssignedEvent,
   TaskCompletedEvent,
   TaskFailedEvent,
-  TaskCancelledEvent
+  TaskCancelledEvent,
+  TaskPriorityChangedEvent
 } from './events/TaskEvents';
 import type {
   Task as ITask,
@@ -59,7 +60,13 @@ export class Task extends AggregateRoot<string> implements ITask {
   }
 
   set priority(value: TaskPriority) {
-    this._priority = Priority.fromString(value);
+    const previous = this._priority;
+    const next = Priority.fromString(value);
+    if (previous.equals(next)) {
+      return;
+    }
+    this._priority = next;
+    this.applyEvent(new TaskPriorityChangedEvent(this.id, previous.value, next.value));
   }
 
   get status(): TaskStatusValue {

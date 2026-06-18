@@ -12,6 +12,12 @@ export class TaskAssignedEvent extends DomainEvent {
   }
 }
 
+export class TaskPriorityChangedEvent extends DomainEvent {
+  constructor(taskId: string, readonly previousPriority: string, readonly newPriority: string) {
+    super(taskId);
+  }
+}
+
 export class TaskCompletedEvent extends DomainEvent {
   constructor(taskId: string, readonly durationMs?: number) {
     super(taskId);

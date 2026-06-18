@@ -26,6 +26,7 @@ const packages = [
   'providers',
   'swarm',
   'hooks',
+  'guidance',
   'plugins',
   'mcp',
   'integration',
@@ -46,6 +47,7 @@ const publishOrder = [
   'providers',   // Depends on shared
   'swarm',       // Depends on shared, memory
   'hooks',       // Depends on shared, memory, neural
+  'guidance',    // Depends on shared, hooks, memory
   'plugins',     // Depends on shared, hooks
   'mcp',         // Depends on shared, swarm, memory
   'integration', // Depends on multiple
@@ -105,19 +107,24 @@ function updatePackageJson(pkgName) {
     pkg.exports = newExports;
   }
 
-  // Replace workspace:* with actual versions
+  // Replace workspace: specifiers with actual versions. A bare
+  // `workspace:*`/`workspace:^`/`workspace:~` has no embedded version, so it
+  // falls back to this package's VERSION; a pinned specifier like
+  // `workspace:^3.0.0-alpha.21` already carries the real dependency version,
+  // so just strip the `workspace:` prefix and keep it as-is.
+  const resolveWorkspaceSpecifier = (version) => {
+    if (!version.startsWith('workspace:')) return version;
+    const spec = version.slice('workspace:'.length);
+    return spec === '*' || spec === '^' || spec === '~' ? `^${VERSION}` : spec;
+  };
   if (pkg.dependencies) {
     for (const [dep, version] of Object.entries(pkg.dependencies)) {
-      if (version === 'workspace:*' || version === 'workspace:^') {
-        pkg.dependencies[dep] = `^${VERSION}`;
-      }
+      pkg.dependencies[dep] = resolveWorkspaceSpecifier(version);
     }
   }
   if (pkg.peerDependencies) {
     for (const [dep, version] of Object.entries(pkg.peerDependencies)) {
-      if (version.includes('workspace:')) {
-        pkg.peerDependencies[dep] = `^${VERSION}`;
-      }
+      pkg.peerDependencies[dep] = resolveWorkspaceSpecifier(version);
     }
   }
 

@@ -1046,6 +1046,7 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
       this.idMapFlushTimer = null;
       this.flushIdMap();
     }, 200);
+    this.idMapFlushTimer.unref();
   }
 
   /**
