@@ -77,7 +77,6 @@ export class LearningPlugin {
    */
   async initialize(dbPath: string, cacheSize = 1000): Promise<void> {
     if (this.initialized) return;
-    this.initialized = true;
 
     try {
       // Use a variable specifier so TS doesn't try to resolve type
@@ -90,6 +89,7 @@ export class LearningPlugin {
         enableReasoning: true,
         cacheSize,
       });
+      this.initialized = true;
     } catch {
       this.adapter = null;
     }
