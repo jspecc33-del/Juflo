@@ -11,6 +11,7 @@
  */
 
 import { EventEmitter } from 'node:events';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import {
   IMemoryBackend,
   MemoryEntry,
@@ -146,6 +147,16 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
   // O(1) reverse lookup for numeric ID -> string ID (fixes O(n) linear scan)
   private numericToStringIdMap: Map<number, string> = new Map();
 
+  // Collision-free string ID <-> numeric ID mapping (sequential assignment)
+  private stringToNumericIdMap: Map<string, number> = new Map();
+  private nextNumericId: number = 1;
+
+  // Sidecar file persisting the ID mapping so sequential numeric IDs survive
+  // process restarts and keep matching a persistent HNSW index on disk.
+  private idMapPath?: string;
+  private idMapDirty: boolean = false;
+  private idMapFlushTimer: NodeJS.Timeout | null = null;
+
   // Performance tracking
   private stats = {
     queryCount: 0,
@@ -158,6 +169,9 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
     super();
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.available = false; // Will be set during initialization
+    if (this.config.dbPath && this.config.dbPath !== ':memory:') {
+      this.idMapPath = `${this.config.dbPath}.idmap.json`;
+    }
   }
 
   /**
@@ -165,6 +179,9 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
+
+    // Restore the string<->numeric ID mapping from a previous process, if any
+    this.loadIdMap();
 
     // Try to import AgentDB
     await ensureAgentDBImport();
@@ -185,6 +202,9 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
         forceWasm: this.config.forceWasm,
         vectorBackend: this.config.vectorBackend,
         vectorDimension: this.config.vectorDimension,
+        hnswM: this.config.hnswM,
+        hnswEfConstruction: this.config.hnswEfConstruction,
+        hnswEfSearch: this.config.hnswEfSearch,
       });
 
       // Suppress agentdb's noisy console.log during init
@@ -226,6 +246,12 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
   async shutdown(): Promise<void> {
     if (!this.initialized) return;
 
+    if (this.idMapFlushTimer) {
+      clearTimeout(this.idMapFlushTimer);
+      this.idMapFlushTimer = null;
+    }
+    this.flushIdMap();
+
     if (this.agentdb) {
       await this.agentdb.close();
     }
@@ -247,7 +273,7 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
     this.entries.set(entry.id, entry);
 
     // Register ID mapping for O(1) reverse lookup
-    this.registerIdMapping(entry.id);
+    this.stringIdToNumeric(entry.id);
 
     // Update indexes
     this.updateIndexes(entry);
@@ -410,11 +436,12 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
   }
 
   /**
-   * Bulk insert
+   * Bulk insert (OPTIMIZED: parallel batches, same strategy as AgentDBAdapter)
    */
-  async bulkInsert(entries: MemoryEntry[]): Promise<void> {
-    for (const entry of entries) {
-      await this.store(entry);
+  async bulkInsert(entries: MemoryEntry[], options?: { batchSize?: number }): Promise<void> {
+    const batchSize = options?.batchSize ?? 100;
+    for (let i = 0; i < entries.length; i += batchSize) {
+      await Promise.all(entries.slice(i, i + batchSize).map((e) => this.store(e)));
     }
   }
 
@@ -936,15 +963,20 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
   }
 
   /**
-   * Convert string ID to numeric for HNSW
+   * Convert string ID to a collision-free numeric ID for HNSW.
+   * Assigns a sequential ID on first use and caches both directions —
+   * hashing risks collisions at scale, which would silently conflate
+   * distinct entries within the vector index.
    */
   private stringIdToNumeric(id: string): number {
-    let hash = 0;
-    for (let i = 0; i < id.length; i++) {
-      hash = (hash << 5) - hash + id.charCodeAt(i);
-      hash |= 0;
+    let numericId = this.stringToNumericIdMap.get(id);
+    if (numericId === undefined) {
+      numericId = this.nextNumericId++;
+      this.stringToNumericIdMap.set(id, numericId);
+      this.numericToStringIdMap.set(numericId, id);
+      this.scheduleIdMapPersist();
     }
-    return Math.abs(hash);
+    return numericId;
   }
 
   /**
@@ -962,21 +994,79 @@ export class AgentDBBackend extends EventEmitter implements IMemoryBackend {
   }
 
   /**
-   * Register string ID in reverse lookup map
-   * Called when storing entries to maintain bidirectional mapping
-   */
-  private registerIdMapping(stringId: string): void {
-    const numericId = this.stringIdToNumeric(stringId);
-    this.numericToStringIdMap.set(numericId, stringId);
-  }
-
-  /**
-   * Unregister string ID from reverse lookup map
+   * Unregister string ID from reverse lookup maps
    * Called when deleting entries
    */
   private unregisterIdMapping(stringId: string): void {
-    const numericId = this.stringIdToNumeric(stringId);
-    this.numericToStringIdMap.delete(numericId);
+    const numericId = this.stringToNumericIdMap.get(stringId);
+    if (numericId !== undefined) {
+      this.numericToStringIdMap.delete(numericId);
+      this.stringToNumericIdMap.delete(stringId);
+      this.scheduleIdMapPersist();
+    }
+  }
+
+  /**
+   * Load the persisted string<->numeric ID map from the sidecar file, if
+   * one exists from a previous process. Keeps sequential numeric IDs
+   * stable across restarts so they continue to match a persistent HNSW
+   * index on disk.
+   */
+  private loadIdMap(): void {
+    if (!this.idMapPath || !existsSync(this.idMapPath)) return;
+
+    try {
+      const parsed = JSON.parse(readFileSync(this.idMapPath, 'utf-8')) as {
+        nextNumericId?: number;
+        entries?: Array<[string, number]>;
+      };
+
+      for (const [stringId, numericId] of parsed.entries ?? []) {
+        this.stringToNumericIdMap.set(stringId, numericId);
+        this.numericToStringIdMap.set(numericId, stringId);
+      }
+
+      if (typeof parsed.nextNumericId === 'number' && parsed.nextNumericId > this.nextNumericId) {
+        this.nextNumericId = parsed.nextNumericId;
+      }
+    } catch {
+      // Corrupt or unreadable ID map - start fresh rather than fail init
+    }
+  }
+
+  /**
+   * Debounce writes to the ID map sidecar file so bulk inserts coalesce
+   * into a single write instead of one write per new ID.
+   */
+  private scheduleIdMapPersist(): void {
+    if (!this.idMapPath) return;
+    this.idMapDirty = true;
+    if (this.idMapFlushTimer) return;
+    this.idMapFlushTimer = setTimeout(() => {
+      this.idMapFlushTimer = null;
+      this.flushIdMap();
+    }, 200);
+  }
+
+  /**
+   * Write the current ID map to the sidecar file.
+   */
+  private flushIdMap(): void {
+    if (!this.idMapPath || !this.idMapDirty) return;
+    this.idMapDirty = false;
+
+    try {
+      writeFileSync(
+        this.idMapPath,
+        JSON.stringify({
+          nextNumericId: this.nextNumericId,
+          entries: Array.from(this.stringToNumericIdMap.entries()),
+        })
+      );
+    } catch {
+      // Best-effort persistence - a failed write just means the next
+      // restart re-derives fresh sequential IDs instead of resuming them
+    }
   }
 
   /**

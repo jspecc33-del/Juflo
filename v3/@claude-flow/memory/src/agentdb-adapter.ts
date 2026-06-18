@@ -25,6 +25,7 @@ import {
   createDefaultEntry,
   CacheStats,
   HNSWStats,
+  QuantizationConfig,
 } from './types.js';
 import { HNSWIndex } from './hnsw-index.js';
 import { CacheManager } from './cache-manager.js';
@@ -54,6 +55,16 @@ export interface AgentDBAdapterConfig {
   /** HNSW efConstruction parameter */
   hnswEfConstruction: number;
 
+  /** HNSW efSearch parameter (search-time quality vs speed trade-off) */
+  hnswEfSearch: number;
+
+  /**
+   * Vector quantization for memory reduction (opt-in).
+   * binary: 32x smaller, ~2-5% accuracy loss. scalar: 4x smaller, ~1-2% loss.
+   * product: 8-16x smaller, ~3-7% loss. Omit for full precision.
+   */
+  quantization?: QuantizationConfig;
+
   /** Default namespace */
   defaultNamespace: string;
 
@@ -78,6 +89,7 @@ const DEFAULT_CONFIG: AgentDBAdapterConfig = {
   cacheTtl: 300000, // 5 minutes
   hnswM: 16,
   hnswEfConstruction: 200,
+  hnswEfSearch: 100,
   defaultNamespace: 'default',
   persistenceEnabled: false,
 };
@@ -123,6 +135,7 @@ export class AgentDBAdapter extends EventEmitter implements IMemoryBackend {
       efConstruction: this.config.hnswEfConstruction,
       maxElements: this.config.maxEntries,
       metric: 'cosine',
+      quantization: this.config.quantization,
     });
 
     // Initialize cache
@@ -404,8 +417,22 @@ export class AgentDBAdapter extends EventEmitter implements IMemoryBackend {
     options: SearchOptions
   ): Promise<SearchResult[]> {
     const startTime = performance.now();
+    // ef must be >= k, or HNSWIndex's BinaryMaxHeap caps results below k
+    const ef = Math.max(options.ef ?? this.config.hnswEfSearch, options.k);
 
-    const indexResults = await this.index.search(embedding, options.k, options.ef);
+    // When entry-level filters are present, delegate to searchWithFilters so
+    // the over-fetch escalates automatically if the filter is selective
+    const indexResults = options.filters
+      ? await this.index.searchWithFilters(
+          embedding,
+          options.k,
+          (id) => {
+            const entry = this.entries.get(id);
+            return !!entry && this.applyFilters([entry], options.filters!).length > 0;
+          },
+          ef
+        )
+      : await this.index.search(embedding, options.k, ef);
 
     const results: SearchResult[] = [];
     for (const { id, distance } of indexResults) {
@@ -415,12 +442,6 @@ export class AgentDBAdapter extends EventEmitter implements IMemoryBackend {
       // Apply threshold filter
       const score = 1 - distance; // Convert distance to similarity
       if (options.threshold && score < options.threshold) continue;
-
-      // Apply additional filters if provided
-      if (options.filters) {
-        const filtered = this.applyFilters([entry], options.filters);
-        if (filtered.length === 0) continue;
-      }
 
       results.push({ entry, score, distance });
     }
@@ -494,9 +515,13 @@ export class AgentDBAdapter extends EventEmitter implements IMemoryBackend {
       await Promise.all(batch.map(({ id, embedding }) => this.index.addPoint(id, embedding)));
     }
 
-    // Phase 4: Batch cache update (only populate hot entries)
-    if (this.config.cacheEnabled && entries.length <= this.config.cacheSize) {
-      for (const entry of entries) {
+    // Phase 4: Batch cache update — cache the most-recent N entries when bulk
+    // exceeds cacheSize, rather than skipping all of them
+    if (this.config.cacheEnabled) {
+      const toCache = entries.length <= this.config.cacheSize
+        ? entries
+        : entries.slice(-this.config.cacheSize);
+      for (const entry of toCache) {
         this.cache.set(entry.id, entry);
       }
     }
@@ -827,8 +852,15 @@ export class AgentDBAdapter extends EventEmitter implements IMemoryBackend {
       return this.queryWithFilters(query);
     }
 
+    // search() escalates internally via HNSWIndex.searchWithFilters when filters
+    // are set, but that escalation targets the entry-filter predicate only -- it
+    // doesn't know about options.threshold, which is applied afterwards in
+    // search() and can still drop candidates below query.limit. Over-fetch to
+    // compensate when a threshold is set.
+    const k = query.threshold ? query.limit * 2 : query.limit;
+
     const searchResults = await this.search(embedding, {
-      k: query.limit * 2, // Over-fetch for filtering
+      k,
       threshold: query.threshold,
       filters: query,
     });

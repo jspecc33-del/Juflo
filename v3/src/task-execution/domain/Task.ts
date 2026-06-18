@@ -1,23 +1,33 @@
 /**
  * Task Domain Entity
  *
- * Represents a task to be executed by agents in the V3 system
+ * Represents a task to be executed by agents in the V3 system.
+ * Implemented as an aggregate root: status and priority are immutable
+ * value objects, and state transitions raise domain events.
  */
 
+import { AggregateRoot } from '../../shared/domain';
+import { TaskId } from './value-objects/TaskId';
+import { TaskStatus } from './value-objects/TaskStatus';
+import { Priority } from './value-objects/Priority';
+import {
+  TaskStartedEvent,
+  TaskAssignedEvent,
+  TaskCompletedEvent,
+  TaskFailedEvent,
+  TaskCancelledEvent
+} from './events/TaskEvents';
 import type {
   Task as ITask,
   TaskPriority,
-  TaskStatus,
+  TaskStatus as TaskStatusValue,
   TaskType,
   WorkflowDefinition
 } from '../../shared/types';
 
-export class Task implements ITask {
-  public readonly id: string;
+export class Task extends AggregateRoot<string> implements ITask {
   public readonly type: TaskType;
   public description: string;
-  public priority: TaskPriority;
-  public status: TaskStatus;
   public assignedTo?: string;
   public dependencies: string[];
   public metadata?: Record<string, unknown>;
@@ -25,21 +35,35 @@ export class Task implements ITask {
   public onExecute?: () => void | Promise<void>;
   public onRollback?: () => void | Promise<void>;
 
+  private _priority: Priority;
+  private _status: TaskStatus;
   private startedAt?: number;
   private completedAt?: number;
 
   constructor(config: ITask) {
-    this.id = config.id;
+    super(TaskId.create(config.id).value);
     this.type = config.type;
     this.description = config.description;
-    this.priority = config.priority;
-    this.status = config.status || 'pending';
+    this._priority = Priority.fromString(config.priority);
+    this._status = config.status ? TaskStatus.fromString(config.status) : TaskStatus.pending();
     this.assignedTo = config.assignedTo;
     this.dependencies = config.dependencies || [];
     this.metadata = config.metadata || {};
     this.workflow = config.workflow;
     this.onExecute = config.onExecute;
     this.onRollback = config.onRollback;
+  }
+
+  get priority(): TaskPriority {
+    return this._priority.value;
+  }
+
+  set priority(value: TaskPriority) {
+    this._priority = Priority.fromString(value);
+  }
+
+  get status(): TaskStatusValue {
+    return this._status.value;
   }
 
   /**
@@ -53,9 +77,10 @@ export class Task implements ITask {
    * Mark task as started
    */
   start(): void {
-    if (this.status === 'pending') {
-      this.status = 'in-progress';
+    if (this._status.isPending()) {
+      this._status = TaskStatus.inProgress();
       this.startedAt = Date.now();
+      this.applyEvent(new TaskStartedEvent(this.id));
     }
   }
 
@@ -63,9 +88,10 @@ export class Task implements ITask {
    * Mark task as completed
    */
   complete(): void {
-    if (this.status === 'in-progress') {
-      this.status = 'completed';
+    if (this._status.isInProgress()) {
+      this._status = TaskStatus.completed();
       this.completedAt = Date.now();
+      this.applyEvent(new TaskCompletedEvent(this.id, this.getDuration()));
     }
   }
 
@@ -73,20 +99,22 @@ export class Task implements ITask {
    * Mark task as failed
    */
   fail(error?: string): void {
-    this.status = 'failed';
+    this._status = TaskStatus.failed();
     this.completedAt = Date.now();
     if (error && this.metadata) {
       this.metadata.error = error;
     }
+    this.applyEvent(new TaskFailedEvent(this.id, error));
   }
 
   /**
    * Cancel the task
    */
   cancel(): void {
-    if (this.status !== 'completed' && this.status !== 'failed') {
-      this.status = 'cancelled';
+    if (!this._status.isCompleted() && !this._status.isFailed()) {
+      this._status = TaskStatus.cancelled();
       this.completedAt = Date.now();
+      this.applyEvent(new TaskCancelledEvent(this.id));
     }
   }
 
@@ -115,18 +143,14 @@ export class Task implements ITask {
    */
   assignTo(agentId: string): void {
     this.assignedTo = agentId;
+    this.applyEvent(new TaskAssignedEvent(this.id, agentId));
   }
 
   /**
    * Get priority as numeric value for sorting
    */
   getPriorityValue(): number {
-    const values: Record<TaskPriority, number> = {
-      high: 3,
-      medium: 2,
-      low: 1
-    };
-    return values[this.priority] || 2;
+    return this._priority.getNumericValue();
   }
 
   /**

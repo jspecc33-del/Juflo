@@ -393,13 +393,26 @@ export class HNSWIndex extends EventEmitter {
     filter: (id: string) => boolean,
     ef?: number
   ): Promise<Array<{ id: string; distance: number }>> {
-    // Over-fetch to account for filtered results
-    const overFetchFactor = 3;
-    const candidates = await this.search(query, k * overFetchFactor, ef);
+    // Over-fetch to account for filtered results, escalating the fetch size
+    // when the filter is selective enough that the first pass falls short
+    let fetchSize = Math.min(k * 3, this.nodes.size);
+    let filtered: Array<{ id: string; distance: number }> = [];
 
-    return candidates
-      .filter((c) => filter(c.id))
-      .slice(0, k);
+    while (true) {
+      // ef must scale with fetchSize, otherwise the BinaryMaxHeap inside
+      // search() stays capped at the original ef and escalation is a no-op
+      const adjustedEf = ef != null ? Math.max(ef, fetchSize) : undefined;
+      const candidates = await this.search(query, fetchSize, adjustedEf);
+      filtered = candidates.filter((c) => filter(c.id));
+
+      if (filtered.length >= k || fetchSize >= this.nodes.size) {
+        break;
+      }
+
+      fetchSize = Math.min(fetchSize * 2, this.nodes.size);
+    }
+
+    return filtered.slice(0, k);
   }
 
   /**

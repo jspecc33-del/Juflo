@@ -13,7 +13,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@claude-flow/memory": "^3.0.0-alpha.2",
+    "@claude-flow/memory": "workspace:^3.0.0-alpha.21",
     "@ruvector/sona": "latest"
   },
   "optionalDependencies": {
